@@ -57,6 +57,7 @@ export function Multas({ cliente }: Props) {
           ait: m.ait ?? '',
           data_cadastro: new Date(m.data_cadastro).toISOString().split('T')[0],
           valor: parseFloat(m.valor_bruto) || 0,
+          link_ait: m['doc_infração'] ? `https:${m['doc_infração']}` : null,
         }))
 
         setCliente({ ...cliente, multas })
@@ -96,6 +97,9 @@ export function Multas({ cliente }: Props) {
             <span className="flex-1 text-right text-[9px] font-semibold uppercase tracking-wide text-zinc-300">
               Valor
             </span>
+            <span className="w-[80px] text-right text-[9px] font-semibold uppercase tracking-wide text-zinc-300">
+              Ações
+            </span>
           </div>
 
           {itensPagina.map((m) => (
@@ -103,6 +107,20 @@ export function Multas({ cliente }: Props) {
               <span className="flex-1 text-xs text-zinc-600">{m.ait || '—'}</span>
               <span className="flex-1 text-xs text-zinc-600">{formatarData(m.data_cadastro)}</span>
               <span className="flex-1 text-right text-xs font-semibold text-zinc-600">{formatarMoeda(m.valor)}</span>
+              <span className="flex w-[80px] justify-end">
+                {m.link_ait ? (
+                  <a
+                    href={m.link_ait}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-md bg-zinc-100 px-2 py-1 text-[10px] font-semibold text-zinc-600"
+                  >
+                    ↓ AIT
+                  </a>
+                ) : (
+                  <span className="text-xs text-zinc-300">—</span>
+                )}
+              </span>
             </div>
           ))}
 

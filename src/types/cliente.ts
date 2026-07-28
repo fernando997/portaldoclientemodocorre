@@ -112,6 +112,7 @@ export interface Multa {
   ait: string
   data_cadastro: string
   valor: number
+  link_ait: string | null
 }
 
 export interface Cliente {
