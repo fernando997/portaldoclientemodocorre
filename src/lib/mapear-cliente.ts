@@ -135,5 +135,6 @@ export function mapearCliente(bubble: BubbleResposta['response']): Cliente {
     lancamentos: [],
     vistorias: [],
     tabela_tarifaria: [],
+    multas: [],
   }
 }

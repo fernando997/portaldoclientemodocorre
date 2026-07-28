@@ -107,6 +107,13 @@ export interface ItemTarifario {
   periodicidade: string
 }
 
+export interface Multa {
+  id: string
+  ait: string
+  data_cadastro: string
+  valor: number
+}
+
 export interface Cliente {
   id: string
   foto_url: string | null
@@ -126,4 +133,5 @@ export interface Cliente {
   lancamentos: LancamentoFinanceiro[]
   vistorias: Vistoria[]
   tabela_tarifaria: ItemTarifario[]
+  multas: Multa[]
 }

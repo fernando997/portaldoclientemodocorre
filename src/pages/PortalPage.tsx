@@ -12,6 +12,7 @@ import {
   Calendar,
   AlertTriangle,
   AlertCircle,
+  Gavel,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import type { Cliente } from '@/types/cliente'
@@ -21,6 +22,7 @@ import { Dashboard } from '@/components/portal/sections/Dashboard'
 import { ProximosPagamentos } from '@/components/portal/sections/ProximosPagamentos'
 import { ParcelasPagas } from '@/components/portal/sections/ParcelasPagas'
 import { Contratos } from '@/components/portal/sections/Contratos'
+import { Multas } from '@/components/portal/sections/Multas'
 import { TabelaTarifaria } from '@/components/portal/sections/TabelaTarifaria'
 import { Vistorias } from '@/components/portal/sections/Vistorias'
 import { MeusDados } from '@/components/portal/sections/MeusDados'
@@ -31,6 +33,7 @@ type Secao =
   | 'proximos-pagamentos'
   | 'parcelas-pagas'
   | 'contratos'
+  | 'multas'
   | 'tabela-tarifaria'
   | 'vistorias'
   | 'meus-dados'
@@ -39,6 +42,7 @@ const ABAS: { id: Secao; label: string; Icon: typeof Grid }[] = [
   { id: 'dashboard', label: 'Dashboard', Icon: Grid },
   { id: 'parcelas-pagas', label: 'Pagas', Icon: CheckCircle2 },
   { id: 'contratos', label: 'Contratos', Icon: FileText },
+  { id: 'multas', label: 'Multas', Icon: Gavel },
   { id: 'tabela-tarifaria', label: 'Tarifas', Icon: BarChart2 },
   { id: 'vistorias', label: 'Vistorias', Icon: ClipboardList },
   { id: 'meus-dados', label: 'Meus dados', Icon: User },
@@ -136,6 +140,8 @@ export function PortalPage() {
         return <ParcelasPagas cliente={cliente} />
       case 'contratos':
         return <Contratos cliente={cliente} />
+      case 'multas':
+        return <Multas cliente={cliente} />
       case 'tabela-tarifaria':
         return <TabelaTarifaria cliente={cliente} />
       case 'vistorias':

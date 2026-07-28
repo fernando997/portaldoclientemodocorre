@@ -124,6 +124,54 @@ export interface BubbleVeiculo {
   'Created By': string
 }
 
+// Retornada dentro de response.multas no endpoint portal-cliente_vistorias
+export interface BubbleMulta {
+  _id: string
+  ait: string
+  cidade: string
+  cod_barra: string
+  cod_ctb: string
+  comprovante_pg?: string
+  contrato_atrelado: string
+  data: number
+  data_cadastro: number
+  data_ind_condutor?: number
+  descricao: string
+  'doc_infração'?: string
+  doc_nic?: string
+  endereco: string
+  file_pagamento?: string
+  hora: string
+  id_externo_veiculo: number
+  id_interno_veiculo: string
+  id_multa: number
+  id_numero: number
+  id_proprietario: string
+  id_unico: number
+  id_unidade: string
+  nic: string
+  nome_proprietario: string
+  orgao: string
+  pix_copia_cola?: string
+  placa: string
+  pontos_cnh: string
+  renainf: string
+  responsavel: string
+  senatran_pg?: string
+  status: string
+  Taxa_adm_avista: number
+  Taxa_adm_parcelado: number
+  tipo: string
+  valor_bruto: string
+  valor_desconto: string
+  vel_aferida: string
+  velo_medida: string
+  vencimento: number
+  'Created Date': number
+  'Modified Date': number
+  'Created By': string
+}
+
 export interface BubbleFiador {
   _id: string
   nome: string
