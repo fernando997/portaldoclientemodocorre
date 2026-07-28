@@ -21,6 +21,7 @@ import { AlertaAtraso } from '@/components/portal/AlertaAtraso'
 import { abrirPopup } from '@/lib/abrir-link'
 import { showToast } from '@/components/Toast'
 import { resolverStatusParcela } from '@/utils/parcela'
+import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
 import { Dashboard } from '@/components/portal/sections/Dashboard'
 import { ProximosPagamentos } from '@/components/portal/sections/ProximosPagamentos'
 import { ParcelasPagas } from '@/components/portal/sections/ParcelasPagas'
@@ -64,6 +65,7 @@ function formatarDataCurta(iso: string) {
 export function PortalPage() {
   const navigate = useNavigate()
   const cliente = useAuthStore((s) => s.cliente)
+  const setCliente = useAuthStore((s) => s.setCliente)
   const logout = useAuthStore((s) => s.logout)
   const [secaoAtiva, setSecaoAtiva] = useState<Secao>('dashboard')
   const [alertaFechado, setAlertaFechado] = useState(false)
@@ -96,6 +98,43 @@ export function PortalPage() {
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
+
+  const contratoId = cliente?.contratos[0]?.id
+  const documentoJaCarregado = !!cliente?.contratos[0]?.link_documento_moto
+
+  useEffect(() => {
+    if (!contratoId || documentoJaCarregado) return
+
+    async function buscarDocumentoMoto() {
+      try {
+        const url = `${BUBBLE_BASE_URL}/portal-cliente_vistorias`
+        const body = { contrato: contratoId, apikey: BUBBLE_API_KEY }
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        })
+        const data = await res.json()
+        if (data.status !== 'success') return
+
+        const documento = data.response.veiculo?.Documento
+        if (!documento) return
+
+        const clienteAtual = useAuthStore.getState().cliente
+        if (!clienteAtual) return
+
+        setCliente({
+          ...clienteAtual,
+          contratos: clienteAtual.contratos.map((c) =>
+            c.id === contratoId ? { ...c, link_documento_moto: `https:${documento}` } : c
+          ),
+        })
+      } catch (err) {
+        console.error('[DOCUMENTO MOTO] erro', err)
+      }
+    }
+    buscarDocumentoMoto()
+  }, [contratoId, documentoJaCarregado, setCliente])
 
   if (!cliente) return null
 
