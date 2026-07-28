@@ -18,7 +18,8 @@ import {
 import { useAuthStore } from '@/store/auth'
 import type { Cliente } from '@/types/cliente'
 import { AlertaAtraso } from '@/components/portal/AlertaAtraso'
-import { abrirLink } from '@/lib/abrir-link'
+import { abrirPopup } from '@/lib/abrir-link'
+import { showToast } from '@/components/Toast'
 import { resolverStatusParcela } from '@/utils/parcela'
 import { Dashboard } from '@/components/portal/sections/Dashboard'
 import { ProximosPagamentos } from '@/components/portal/sections/ProximosPagamentos'
@@ -203,18 +204,20 @@ export function PortalPage() {
                   </div>
                 </div>
                 <div className="h-px bg-surface" />
-                {contrato?.link_documento_moto && (
-                  <button
-                    onClick={() => {
-                      setDropdownVisivel(false)
-                      abrirLink(contrato.link_documento_moto!)
-                    }}
-                    className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left"
-                  >
-                    <FileDown size={17} className="text-accent" />
-                    <span className="text-sm font-semibold text-text-body">Documento da moto</span>
-                  </button>
-                )}
+                <button
+                  onClick={() => {
+                    setDropdownVisivel(false)
+                    if (contrato?.link_documento_moto) {
+                      abrirPopup(contrato.link_documento_moto)
+                    } else {
+                      showToast('error', 'Documento ainda não disponível.')
+                    }
+                  }}
+                  className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left"
+                >
+                  <FileDown size={17} className="text-accent" />
+                  <span className="text-sm font-semibold text-text-body">DOCUMENTO</span>
+                </button>
                 <div className="h-px bg-surface" />
                 <button
                   onClick={() => {
