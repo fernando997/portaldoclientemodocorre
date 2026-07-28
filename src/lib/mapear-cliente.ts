@@ -129,7 +129,7 @@ export function mapearCliente(bubble: BubbleResposta['response']): Cliente {
       cpf_fiador: fiador?.cpf ?? '',
       telefone_fiador: fiador?.telefone ?? '',
       link_contrato: (ct as any).url_contrato ? `https:${(ct as any).url_contrato}` : null,
-      link_documento_moto: null,
+      link_documento_moto: bubble.veiculo?.Documento ? `https:${bubble.veiculo.Documento}` : null,
     }] : [],
     parcelas,
     lancamentos: [],

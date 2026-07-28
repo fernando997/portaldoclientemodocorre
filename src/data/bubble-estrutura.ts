@@ -118,6 +118,7 @@ export interface BubbleVeiculo {
   cidade: string
   estado: string
   locadora: string
+  Documento?: string
   'Created Date': number
   'Modified Date': number
   'Created By': string
