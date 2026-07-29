@@ -86,15 +86,15 @@ export function MultaDetalhes({ multa, onVoltar }: Props) {
         </div>
 
         <div className="flex flex-col gap-2.5 border-t border-zinc-100 px-5 py-5">
-          {multa.link_comprovante ? (
+          {multa.link_ait ? (
             <a
-              href={multa.link_comprovante}
+              href={multa.link_ait}
               target="_blank"
               rel="noopener noreferrer"
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-900 py-3 text-sm font-bold text-white"
             >
               <Download size={16} />
-              Comprovante
+              Documento AIT
             </a>
           ) : (
             <button
@@ -102,7 +102,7 @@ export function MultaDetalhes({ multa, onVoltar }: Props) {
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-zinc-100 py-3 text-sm font-bold text-zinc-300"
             >
               <Download size={16} />
-              Comprovante indisponível
+              Documento AIT indisponível
             </button>
           )}
 

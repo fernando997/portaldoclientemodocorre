@@ -55,8 +55,6 @@ export function Multas({ cliente }: Props) {
           throw new Error(data.message ?? 'Erro ao buscar multas')
         }
 
-        console.log('[MULTAS] primeiro item bruto:', data.response.multas?.[0])
-
         const multas = (data.response.multas ?? []).map((m: any) => ({
           id: m._id,
           ait: m.ait ?? '',
@@ -118,7 +116,7 @@ export function Multas({ cliente }: Props) {
             <span className="flex-1 text-right text-[9px] font-semibold uppercase tracking-wide text-zinc-300">
               Valor
             </span>
-            <span className="w-[150px] text-right text-[9px] font-semibold uppercase tracking-wide text-zinc-300">
+            <span className="w-[90px] text-right text-[9px] font-semibold uppercase tracking-wide text-zinc-300">
               Ações
             </span>
           </div>
@@ -128,19 +126,7 @@ export function Multas({ cliente }: Props) {
               <span className="flex-1 text-xs text-zinc-600">{m.ait || '—'}</span>
               <span className="flex-1 text-xs text-zinc-600">{formatarData(m.data_cadastro)}</span>
               <span className="flex-1 text-right text-xs font-semibold text-zinc-600">{formatarMoeda(m.valor)}</span>
-              <span className="flex w-[150px] justify-end gap-1.5">
-                {m.link_ait ? (
-                  <a
-                    href={m.link_ait}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="rounded-md bg-zinc-100 px-2 py-1 text-[10px] font-semibold text-zinc-600"
-                  >
-                    ↓ AIT
-                  </a>
-                ) : (
-                  <span className="text-xs text-zinc-300">—</span>
-                )}
+              <span className="flex w-[90px] justify-end">
                 <button
                   onClick={() => setMultaSelecionada(m)}
                   className="flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-1 text-[10px] font-semibold text-zinc-600"

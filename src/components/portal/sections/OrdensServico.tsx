@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
+import { Eye } from 'lucide-react'
 import type { Cliente } from '@/types/cliente'
 import { useAuthStore } from '@/store/auth'
 import { Paginacao } from '@/components/portal/Paginacao'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
+import { abrirPopup } from '@/lib/abrir-link'
+
+const OS_VIEWER_BASE_URL = 'https://modocorreapp.com.br/ordem_de_servico'
 
 function formatarData(iso: string) {
   if (!iso) return '—'
@@ -119,11 +123,20 @@ export function OrdensServico({ cliente }: Props) {
                     </span>
                   )}
                 </div>
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-600">
-                  <span>{formatarData(os.data_hora)}</span>
-                  {os.tipo && <span>{os.tipo}</span>}
-                  {os.fornecedor && <span>{os.fornecedor}</span>}
-                  {os.km > 0 && <span>{os.km.toLocaleString('pt-BR')} km</span>}
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-600">
+                    <span>{formatarData(os.data_hora)}</span>
+                    {os.tipo && <span>{os.tipo}</span>}
+                    {os.fornecedor && <span>{os.fornecedor}</span>}
+                    {os.km > 0 && <span>{os.km.toLocaleString('pt-BR')} km</span>}
+                  </div>
+                  <button
+                    onClick={() => abrirPopup(`${OS_VIEWER_BASE_URL}?os=${os.id}`)}
+                    className="flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-1 text-[10px] font-semibold text-zinc-600"
+                  >
+                    <Eye size={11} />
+                    Visualizar
+                  </button>
                 </div>
               </div>
             )

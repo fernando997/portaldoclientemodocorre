@@ -19,6 +19,7 @@ import {
 import { useAuthStore } from '@/store/auth'
 import type { Cliente } from '@/types/cliente'
 import { AlertaAtraso } from '@/components/portal/AlertaAtraso'
+import { WhatsAppButton } from '@/components/portal/WhatsAppButton'
 import { abrirPopup } from '@/lib/abrir-link'
 import { showToast } from '@/components/Toast'
 import { resolverStatusParcela } from '@/utils/parcela'
@@ -449,6 +450,8 @@ export function PortalPage() {
 
         <div className="flex-1 overflow-y-auto pt-2">{renderSecao(cliente)}</div>
       </div>
+
+      <WhatsAppButton />
     </div>
   )
 }
