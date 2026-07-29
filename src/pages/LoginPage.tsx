@@ -13,6 +13,24 @@ import logo from '@/assets/logo.png'
 import motoboy from '@/assets/motoboy.png'
 
 const MANTER_LOGADO_KEY = '@manter_logado'
+const LOGIN_BLOQUEIO_KEY = '@login_bloqueio'
+const MAX_TENTATIVAS = 3
+const DURACAO_BLOQUEIO_MS = 60 * 60 * 1000
+const MENSAGEM_BLOQUEIO = 'Você efetuou várias tentativas anteriormente, tente novamente após 1 hora'
+
+function lerBloqueio(): { falhas: number; bloqueadoAte: number | null } {
+  try {
+    const bruto = localStorage.getItem(LOGIN_BLOQUEIO_KEY)
+    if (!bruto) return { falhas: 0, bloqueadoAte: null }
+    return JSON.parse(bruto)
+  } catch {
+    return { falhas: 0, bloqueadoAte: null }
+  }
+}
+
+function salvarBloqueio(estado: { falhas: number; bloqueadoAte: number | null }) {
+  localStorage.setItem(LOGIN_BLOQUEIO_KEY, JSON.stringify(estado))
+}
 
 function gerarCodigo() {
   return Math.floor(100000 + Math.random() * 900000).toString()
@@ -73,7 +91,38 @@ export function LoginPage() {
   const [etapa, setEtapa] = useState<'celular' | 'codigo'>('celular')
   const [celular, setCelular] = useState('')
   const [manterLogado, setManterLogado] = useState(false)
+  const [bloqueadoAte, setBloqueadoAte] = useState<number | null>(() => lerBloqueio().bloqueadoAte)
   const enviando = useRef(false)
+
+  const bloqueado = bloqueadoAte !== null && bloqueadoAte > Date.now()
+
+  function estaBloqueadoAgora(): boolean {
+    const { bloqueadoAte: ate } = lerBloqueio()
+    if (ate !== null && ate > Date.now()) {
+      setBloqueadoAte(ate)
+      showToast('error', MENSAGEM_BLOQUEIO)
+      return true
+    }
+    return false
+  }
+
+  function registrarFalhaLogin() {
+    const atual = lerBloqueio()
+    const falhas = atual.falhas + 1
+    if (falhas >= MAX_TENTATIVAS) {
+      const ate = Date.now() + DURACAO_BLOQUEIO_MS
+      salvarBloqueio({ falhas: 0, bloqueadoAte: ate })
+      setBloqueadoAte(ate)
+      showToast('error', MENSAGEM_BLOQUEIO)
+    } else {
+      salvarBloqueio({ falhas, bloqueadoAte: null })
+    }
+  }
+
+  function registrarSucessoLogin() {
+    salvarBloqueio({ falhas: 0, bloqueadoAte: null })
+    setBloqueadoAte(null)
+  }
 
   useEffect(() => {
     if (localStorage.getItem(MANTER_LOGADO_KEY) === '1') {
@@ -85,6 +134,7 @@ export function LoginPage() {
 
   async function handleEnviarCodigo(cel: string) {
     if (enviando.current) return
+    if (estaBloqueadoAgora()) return
     enviando.current = true
     setLoading(true)
 
@@ -95,6 +145,7 @@ export function LoginPage() {
       const [r1, r2] = await Promise.all([tentarEnvio(cel, codigo), tentarEnvio(celSoDigitos, codigo)])
 
       if (!r1 && !r2) {
+        registrarFalhaLogin()
         showToast('error', 'Número não cadastrado.')
         return
       }
@@ -113,6 +164,7 @@ export function LoginPage() {
 
   async function handleVerificarCodigo(codigo: string) {
     if (enviando.current) return
+    if (estaBloqueadoAgora()) return
     enviando.current = true
     setLoading(true)
 
@@ -127,10 +179,12 @@ export function LoginPage() {
       const data = d1 ?? d2
 
       if (!data) {
+        registrarFalhaLogin()
         showToast('error', 'Código inválido ou expirado.')
         return
       }
 
+      registrarSucessoLogin()
       const clienteMapeado = mapearCliente(data.response)
       setCliente(clienteMapeado)
 
@@ -182,7 +236,12 @@ export function LoginPage() {
         <div className="rounded-3xl border border-white/20 bg-white/10 px-5 py-6 backdrop-blur-sm">
           {etapa === 'celular' ? (
             <>
-              <PhoneStep onSubmit={handleEnviarCodigo} loading={loading} />
+              <PhoneStep
+                onSubmit={handleEnviarCodigo}
+                loading={loading}
+                bloqueado={bloqueado}
+                onBloqueadoClick={() => showToast('error', MENSAGEM_BLOQUEIO)}
+              />
               <button
                 type="button"
                 onClick={() => setManterLogado((v) => !v)}
@@ -208,6 +267,8 @@ export function LoginPage() {
               onSubmit={handleVerificarCodigo}
               onVoltar={() => setEtapa('celular')}
               loading={loading}
+              bloqueado={bloqueado}
+              onBloqueadoClick={() => showToast('error', MENSAGEM_BLOQUEIO)}
             />
           )}
         </div>

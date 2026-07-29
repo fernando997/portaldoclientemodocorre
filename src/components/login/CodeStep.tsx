@@ -16,9 +16,11 @@ interface Props {
   onSubmit: (codigo: string) => void
   onVoltar: () => void
   loading: boolean
+  bloqueado?: boolean
+  onBloqueadoClick?: () => void
 }
 
-export function CodeStep({ celular, onSubmit, onVoltar, loading }: Props) {
+export function CodeStep({ celular, onSubmit, onVoltar, loading, bloqueado = false, onBloqueadoClick }: Props) {
   const {
     control,
     handleSubmit,
@@ -53,7 +55,8 @@ export function CodeStep({ celular, onSubmit, onVoltar, loading }: Props) {
               inputMode="numeric"
               maxLength={6}
               autoComplete="one-time-code"
-              className={`w-full rounded-[14px] border bg-input-bg px-[18px] py-[18px] text-center text-2xl font-bold tracking-[0.5em] text-text-light placeholder:text-text-faint focus:outline-none ${
+              disabled={bloqueado}
+              className={`w-full rounded-[14px] border bg-input-bg px-[18px] py-[18px] text-center text-2xl font-bold tracking-[0.5em] text-text-light placeholder:text-text-faint focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                 errors.codigo ? 'border-danger' : 'border-input-border'
               }`}
             />
@@ -67,6 +70,12 @@ export function CodeStep({ celular, onSubmit, onVoltar, loading }: Props) {
       <button
         type="submit"
         disabled={loading}
+        onClick={(e) => {
+          if (bloqueado) {
+            e.preventDefault()
+            onBloqueadoClick?.()
+          }
+        }}
         className="mb-3 w-full rounded-[14px] bg-accent py-[17px] text-base font-bold tracking-wide text-text-light shadow-[0_6px_12px_-2px_rgba(59,160,103,0.4)] disabled:opacity-50 disabled:shadow-none"
       >
         {loading ? 'Verificando...' : 'Confirmar acesso'}

@@ -15,9 +15,11 @@ type FormData = z.infer<typeof schema>
 interface Props {
   onSubmit: (celular: string) => Promise<void>
   loading: boolean
+  bloqueado?: boolean
+  onBloqueadoClick?: () => void
 }
 
-export function PhoneStep({ onSubmit, loading }: Props) {
+export function PhoneStep({ onSubmit, loading, bloqueado = false, onBloqueadoClick }: Props) {
   const {
     control,
     handleSubmit,
@@ -42,7 +44,8 @@ export function PhoneStep({ onSubmit, loading }: Props) {
               onChange={(e) => field.onChange(formatPhoneBR(e.target.value))}
               placeholder="(00) 00000-0000"
               inputMode="tel"
-              className={`w-full rounded-[14px] border bg-input-bg px-[18px] py-4 text-base text-text-light placeholder:text-text-faint focus:outline-none ${
+              disabled={bloqueado}
+              className={`w-full rounded-[14px] border bg-input-bg px-[18px] py-4 text-base text-text-light placeholder:text-text-faint focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 ${
                 errors.celular ? 'border-danger' : 'border-input-border'
               }`}
             />
@@ -56,6 +59,12 @@ export function PhoneStep({ onSubmit, loading }: Props) {
       <button
         type="submit"
         disabled={loading}
+        onClick={(e) => {
+          if (bloqueado) {
+            e.preventDefault()
+            onBloqueadoClick?.()
+          }
+        }}
         className="w-full rounded-[14px] bg-accent py-[17px] text-base font-bold tracking-wide text-text-light shadow-[0_6px_12px_-2px_rgba(59,160,103,0.4)] disabled:opacity-50 disabled:shadow-none"
       >
         {loading ? 'Enviando...' : 'Enviar código'}
