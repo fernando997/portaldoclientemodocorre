@@ -17,6 +17,7 @@ export function mapearParcela(p: BubbleParcela, index: number): Cliente['parcela
     link_pagamento: p.status === 'PAGO' ? (p['comprovante link'] ?? p.url_pagamento) : p.url_pagamento,
     lancamento_id: p['lançamento'],
     id_pay: p['id asaas'],
+    bloqueio_autorizado: p['bloqueio autorizado'] ?? '',
   }
 }
 
@@ -113,6 +114,7 @@ function mapearContratoDaLista(ct: BubbleContrato, ctx: ContextoContratoPrimario
     telefone_fiador: ehPrimario ? (ctx.fiadorPrimario?.telefone ?? '') : '',
     link_contrato: ct.url_contrato ? `https:${ct.url_contrato}` : null,
     link_documento_moto: ehPrimario && ctx.documentoPrimario ? `https:${ctx.documentoPrimario}` : null,
+    bloqueio: ct.bloqueio ?? '',
   }
 }
 

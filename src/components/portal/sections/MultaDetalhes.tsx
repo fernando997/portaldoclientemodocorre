@@ -1,5 +1,4 @@
-import { useState } from 'react'
-import { ArrowLeft, Download, Barcode, Copy, Check, type LucideIcon } from 'lucide-react'
+import { ArrowLeft, Download } from 'lucide-react'
 import type { Multa } from '@/types/cliente'
 
 function formatarMoeda(valor: number) {
@@ -14,38 +13,6 @@ function formatarData(iso: string) {
 interface Props {
   multa: Multa
   onVoltar: () => void
-}
-
-function BotaoCopiar({
-  label,
-  valor,
-  Icon = Copy,
-  destaque = false,
-}: {
-  label: string
-  valor: string
-  Icon?: LucideIcon
-  destaque?: boolean
-}) {
-  const [copiado, setCopiado] = useState(false)
-
-  async function copiar() {
-    await navigator.clipboard.writeText(valor)
-    setCopiado(true)
-    setTimeout(() => setCopiado(false), 2000)
-  }
-
-  return (
-    <button
-      onClick={copiar}
-      className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold ${
-        copiado ? 'bg-success text-white' : destaque ? 'bg-accent text-white' : 'bg-zinc-100 text-zinc-600'
-      }`}
-    >
-      {copiado ? <Check size={16} /> : <Icon size={16} />}
-      {copiado ? 'Copiado!' : label}
-    </button>
-  )
 }
 
 export function MultaDetalhes({ multa, onVoltar }: Props) {
@@ -104,14 +71,6 @@ export function MultaDetalhes({ multa, onVoltar }: Props) {
               <Download size={16} />
               Documento AIT indisponível
             </button>
-          )}
-
-          {multa.cod_barra && (
-            <BotaoCopiar label="Copiar código de barras" valor={multa.cod_barra} Icon={Barcode} />
-          )}
-
-          {multa.pix_copia_cola && (
-            <BotaoCopiar label="Copiar Pix" valor={multa.pix_copia_cola} destaque />
           )}
         </div>
       </div>

@@ -51,6 +51,7 @@ export interface BubbleContrato {
   prazo_maximo_renovações: number
   cliente: string
   placa: string
+  bloqueio?: string
   planos: string | { 'descrição': string; [key: string]: any }
   prazo: string | { dias: number; meses: number; [key: string]: any }
   'franquia de km': string
@@ -92,6 +93,7 @@ export interface BubbleParcela {
   url_pagamento: string
   placa: string
   contrato_atrelado: string
+  'bloqueio autorizado'?: string
   unidade: string
   cus_id: string
   'id asaas': string

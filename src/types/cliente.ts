@@ -39,6 +39,7 @@ export interface Contrato {
   telefone_fiador: string
   link_contrato: string | null
   link_documento_moto: string | null
+  bloqueio: string
 }
 
 export type StatusParcela = 'paga' | 'atrasada' | 'a_vencer'
@@ -86,6 +87,7 @@ export interface Parcela {
   os_simples?: OSSimples
   lancamento_id?: string
   id_pay?: string
+  bloqueio_autorizado: string
 }
 
 export interface Vistoria {

@@ -19,6 +19,7 @@ import {
 import { useAuthStore } from '@/store/auth'
 import type { Cliente } from '@/types/cliente'
 import { AlertaAtraso } from '@/components/portal/AlertaAtraso'
+import { AlertaBloqueio } from '@/components/portal/AlertaBloqueio'
 import { WhatsAppButton } from '@/components/portal/WhatsAppButton'
 import { abrirPopup } from '@/lib/abrir-link'
 import { showToast } from '@/components/Toast'
@@ -76,6 +77,7 @@ export function PortalPage() {
   const logout = useAuthStore((s) => s.logout)
   const [secaoAtiva, setSecaoAtiva] = useState<Secao>('dashboard')
   const [alertaFechado, setAlertaFechado] = useState(false)
+  const [filtroBloqueioAtivo, setFiltroBloqueioAtivo] = useState(false)
   const [dropdownVisivel, setDropdownVisivel] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [contratoDropdownVisivel, setContratoDropdownVisivel] = useState(false)
@@ -204,6 +206,15 @@ export function PortalPage() {
   const contrato = cliente.contratos[0]
   const contratosSelecionaveis = cliente.contratos.filter((c) => c.status !== 'reprovado')
 
+  const emRiscoBloqueio =
+    contrato?.bloqueio.toUpperCase() === 'BLOQUEADO' &&
+    cliente.parcelas.some((p) => p.bloqueio_autorizado.toUpperCase() === 'AUTORIZADO')
+
+  function irParaPagamentos(comFiltroBloqueio: boolean) {
+    setSecaoAtiva('proximos-pagamentos')
+    setFiltroBloqueioAtivo(comFiltroBloqueio)
+  }
+
   const iniciais = cliente.nome_completo
     .split(' ')
     .slice(0, 2)
@@ -222,7 +233,7 @@ export function PortalPage() {
       case 'dashboard':
         return <Dashboard cliente={cliente} onVerPlanos={() => setSecaoAtiva('planos-manutencao')} />
       case 'proximos-pagamentos':
-        return <ProximosPagamentos cliente={cliente} />
+        return <ProximosPagamentos cliente={cliente} apenasBloqueio={filtroBloqueioAtivo} />
       case 'parcelas-pagas':
         return <ParcelasPagas cliente={cliente} />
       case 'contratos':
@@ -244,12 +255,14 @@ export function PortalPage() {
 
   return (
     <div className="flex min-h-svh flex-col bg-dark">
+      {emRiscoBloqueio && <AlertaBloqueio onClick={() => irParaPagamentos(true)} />}
+
       {temAtrasadas && !alertaFechado && (
         <AlertaAtraso
           parcelas={cliente.parcelas}
           onClose={() => setAlertaFechado(true)}
           onVerPagamentos={() => {
-            setSecaoAtiva('proximos-pagamentos')
+            irParaPagamentos(false)
             setAlertaFechado(true)
           }}
         />
@@ -395,7 +408,7 @@ export function PortalPage() {
                 </div>
                 <p className="text-[15px] font-bold text-white">{formatarDataCurta(proxima.vencimento)}</p>
                 <button
-                  onClick={() => setSecaoAtiva('proximos-pagamentos')}
+                  onClick={() => irParaPagamentos(false)}
                   className={`mt-2 flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold tracking-wide text-white ${
                     temAtrasadas ? 'bg-danger' : 'bg-accent'
                   }`}
@@ -413,7 +426,7 @@ export function PortalPage() {
               <CheckCircle2 size={22} className="text-accent" />
               <span className="flex-1 text-[15px] font-semibold text-white">Parcelas em dia</span>
               <button
-                onClick={() => setSecaoAtiva('proximos-pagamentos')}
+                onClick={() => irParaPagamentos(false)}
                 className="flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[10px] font-bold tracking-wide text-white"
               >
                 <Calendar size={12} />

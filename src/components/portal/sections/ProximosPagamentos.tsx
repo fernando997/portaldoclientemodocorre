@@ -22,13 +22,18 @@ function formatarMoeda(valor: number) {
 
 interface Props {
   cliente: Cliente
+  apenasBloqueio?: boolean
 }
 
-export function ProximosPagamentos({ cliente }: Props) {
+export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
   const emAberto = cliente.parcelas
     .filter((p) => {
       const s = resolverStatusParcela(p.status, p.vencimento)
-      return s === 'atrasada' || s === 'a_vencer'
+      if (s !== 'atrasada' && s !== 'a_vencer') return false
+      if (apenasBloqueio) {
+        return p.status.toUpperCase() === 'GERADO' && p.bloqueio_autorizado.toUpperCase() === 'AUTORIZADO'
+      }
+      return true
     })
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
 
@@ -134,13 +139,21 @@ export function ProximosPagamentos({ cliente }: Props) {
 
       <h2 className="mb-4 mt-2 text-xl font-bold text-zinc-900">Próximos pagamentos</h2>
 
-      {atrasadas.length > 0 && (
+      {apenasBloqueio ? (
         <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3.5">
-          <p className="text-[13px] font-medium text-[#991B1B]">
-            ⚠️ Você possui {atrasadas.length} parcela{atrasadas.length > 1 ? 's' : ''} em atraso. Regularize para
-            evitar juros.
+          <p className="text-[13px] font-bold text-[#991B1B]">
+            Efetue o pagamento das parcelas abaixo para não correr o risco de bloquear sua moto!
           </p>
         </div>
+      ) : (
+        atrasadas.length > 0 && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3.5">
+            <p className="text-[13px] font-medium text-[#991B1B]">
+              ⚠️ Você possui {atrasadas.length} parcela{atrasadas.length > 1 ? 's' : ''} em atraso. Regularize para
+              evitar juros.
+            </p>
+          </div>
+        )
       )}
 
       <div className="mb-3 flex gap-3">
