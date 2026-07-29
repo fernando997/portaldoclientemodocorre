@@ -115,6 +115,7 @@ export function PortalPage() {
           body: JSON.stringify(body),
         })
         const data = await res.json()
+        console.log('[DOCUMENTO MOTO] status:', data.status, '| veiculo:', data.response?.veiculo)
         if (data.status !== 'success') return
 
         const documento = data.response.veiculo?.documento
