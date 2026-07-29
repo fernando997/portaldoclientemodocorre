@@ -117,7 +117,7 @@ export function PortalPage() {
         const data = await res.json()
         if (data.status !== 'success') return
 
-        const documento = data.response.veiculo?.Documento
+        const documento = data.response.veiculo?.documento
         if (!documento) return
 
         const clienteAtual = useAuthStore.getState().cliente
