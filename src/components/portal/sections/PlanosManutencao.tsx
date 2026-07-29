@@ -29,7 +29,7 @@ export function PlanosManutencao({ cliente, onVoltar }: Props) {
   const [carregando, setCarregando] = useState(!jaTemDados)
   const [erro, setErro] = useState<string | null>(null)
   const POR_PAGINA = 10
-  const ordenados = [...(cliente.planos_manutencao ?? [])].sort((a, b) => b.data.localeCompare(a.data))
+  const ordenados = [...(cliente.planos_manutencao ?? [])].sort((a, b) => a.km - b.km)
   const itensPagina = ordenados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
 
   useEffect(() => {
