@@ -1,8 +1,12 @@
-import { Ribbon, Car, Hourglass, Clock, ArrowRight } from 'lucide-react'
+import { useEffect } from 'react'
+import { Ribbon, Car, Hourglass, Clock, ArrowRight, Wrench, CheckCircle2 } from 'lucide-react'
 import type { Cliente } from '@/types/cliente'
+import { useAuthStore } from '@/store/auth'
+import { buscarPlanosManutencao } from '@/lib/buscar-planos-manutencao'
 
 interface Props {
   cliente: Cliente
+  onVerPlanos: () => void
 }
 
 function formatarData(iso: string) {
@@ -36,8 +40,26 @@ function calcularProgresso(dataInicio: string, dataFim: string): number {
   return (hoje - inicio) / (fim - inicio)
 }
 
-export function Dashboard({ cliente }: Props) {
-  const contrato = cliente.contratos.find((c) => c.status === 'ativo') ?? cliente.contratos[0]
+export function Dashboard({ cliente, onVerPlanos }: Props) {
+  const setCliente = useAuthStore((s) => s.setCliente)
+  const contrato = cliente.contratos[0]
+  const planos = cliente.planos_manutencao ?? []
+  const jaTemPlanos = planos.length > 0
+
+  useEffect(() => {
+    if (jaTemPlanos) return
+    const contratoId = cliente.contratos[0]?.id
+    if (!contratoId) return
+
+    buscarPlanosManutencao(contratoId)
+      .then((planosBuscados) => setCliente({ ...cliente, planos_manutencao: planosBuscados }))
+      .catch((err) => console.error('[DASHBOARD] erro ao buscar planos de manutenção', err))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const ultimoRealizado = [...planos]
+    .filter((p) => p.status.toUpperCase() === 'REALIZADO')
+    .sort((a, b) => b.data.localeCompare(a.data))[0]
 
   if (!contrato) {
     return (
@@ -122,6 +144,37 @@ export function Dashboard({ cliente }: Props) {
             {tempoRestante} restante{progresso >= 1 ? '' : 's'}
           </span>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2.5 rounded-2xl border border-border bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <Wrench size={18} className="text-accent" />
+          <span className="text-[13px] font-semibold uppercase tracking-wide text-text-muted">
+            Manutenção
+          </span>
+        </div>
+
+        {ultimoRealizado ? (
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 size={18} className="text-accent shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-bold text-text-body">
+                {ultimoRealizado.plano_nome || 'Plano de manutenção'}
+              </p>
+              <p className="text-xs text-text-muted">Realizado em {formatarData(ultimoRealizado.data)}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-text-muted">Nenhum plano realizado ainda.</p>
+        )}
+
+        <button
+          onClick={onVerPlanos}
+          className="flex items-center justify-center gap-1.5 rounded-xl bg-accent-light py-2.5 text-sm font-semibold text-accent"
+        >
+          Ver todos os planos
+          <ArrowRight size={14} />
+        </button>
       </div>
     </div>
   )

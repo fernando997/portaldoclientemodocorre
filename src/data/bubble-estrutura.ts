@@ -213,6 +213,7 @@ export interface BubbleResposta {
   response: {
     cliente: BubbleCliente
     contrato: BubbleContrato | Record<string, never>
+    contratos?: BubbleContrato[]
     parcelas?: BubbleParcela[]
     veiculo?: BubbleVeiculo
     fiador?: BubbleFiador

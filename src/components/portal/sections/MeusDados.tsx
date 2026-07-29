@@ -18,7 +18,7 @@ interface Props {
 }
 
 export function MeusDados({ cliente }: Props) {
-  const contrato = cliente.contratos.find((c) => c.status === 'ativo') ?? cliente.contratos[0]
+  const contrato = cliente.contratos[0]
 
   const iniciais = cliente.nome_completo
     .split(' ')

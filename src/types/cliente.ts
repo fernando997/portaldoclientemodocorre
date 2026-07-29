@@ -113,6 +113,37 @@ export interface Multa {
   data_cadastro: string
   valor: number
   link_ait: string | null
+  orgao: string
+  descricao: string
+  endereco: string
+  data: string
+  hora: string
+  status: string
+  placa: string
+  pontos_cnh: string
+  vencimento: string
+  link_comprovante: string | null
+  cod_barra: string
+  pix_copia_cola: string
+}
+
+export interface OrdemServico {
+  id: string
+  numero: number
+  data_hora: string
+  tipo: string
+  fornecedor: string
+  status: string
+  km: number
+}
+
+export interface PlanoManutencao {
+  id: string
+  data: string
+  descricao: string
+  km: number
+  status: string
+  plano_nome: string
 }
 
 export interface Cliente {
@@ -135,4 +166,6 @@ export interface Cliente {
   vistorias: Vistoria[]
   tabela_tarifaria: ItemTarifario[]
   multas: Multa[]
+  ordens_servico: OrdemServico[]
+  planos_manutencao: PlanoManutencao[]
 }

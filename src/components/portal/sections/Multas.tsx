@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
-import type { Cliente } from '@/types/cliente'
+import { Eye } from 'lucide-react'
+import type { Cliente, Multa } from '@/types/cliente'
 import { useAuthStore } from '@/store/auth'
 import { Paginacao } from '@/components/portal/Paginacao'
+import { MultaDetalhes } from '@/components/portal/sections/MultaDetalhes'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
 
 function formatarData(iso: string) {
@@ -22,6 +24,7 @@ export function Multas({ cliente }: Props) {
   const jaTemDados = cliente.multas.length > 0
   const [carregando, setCarregando] = useState(!jaTemDados)
   const [erro, setErro] = useState<string | null>(null)
+  const [multaSelecionada, setMultaSelecionada] = useState<Multa | null>(null)
   const POR_PAGINA = 10
   const ordenadas = [...cliente.multas].sort((a, b) => b.data_cadastro.localeCompare(a.data_cadastro))
   const itensPagina = ordenadas.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
@@ -52,12 +55,26 @@ export function Multas({ cliente }: Props) {
           throw new Error(data.message ?? 'Erro ao buscar multas')
         }
 
+        console.log('[MULTAS] primeiro item bruto:', data.response.multas?.[0])
+
         const multas = (data.response.multas ?? []).map((m: any) => ({
           id: m._id,
           ait: m.ait ?? '',
           data_cadastro: new Date(m.data_cadastro).toISOString().split('T')[0],
           valor: parseFloat(m.valor_bruto) || 0,
           link_ait: m['doc_infração'] ? `https:${m['doc_infração']}` : null,
+          orgao: m.orgao ?? '',
+          descricao: m.descricao ?? '',
+          endereco: m.endereco ?? '',
+          data: m.data ? new Date(m.data).toISOString().split('T')[0] : '',
+          hora: m.hora ?? '',
+          status: m.status ?? '',
+          placa: m.placa ?? '',
+          pontos_cnh: m.pontos_cnh ?? '',
+          vencimento: m.vencimento ? new Date(m.vencimento).toISOString().split('T')[0] : '',
+          link_comprovante: m.comprovante_pg ? `https:${m.comprovante_pg}` : null,
+          cod_barra: m.cod_barra ?? '',
+          pix_copia_cola: m.pix_copia_cola ?? '',
         }))
 
         setCliente({ ...cliente, multas })
@@ -71,6 +88,10 @@ export function Multas({ cliente }: Props) {
     buscar()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  if (multaSelecionada) {
+    return <MultaDetalhes multa={multaSelecionada} onVoltar={() => setMultaSelecionada(null)} />
+  }
 
   return (
     <div className="overflow-y-auto px-4">
@@ -97,7 +118,7 @@ export function Multas({ cliente }: Props) {
             <span className="flex-1 text-right text-[9px] font-semibold uppercase tracking-wide text-zinc-300">
               Valor
             </span>
-            <span className="w-[80px] text-right text-[9px] font-semibold uppercase tracking-wide text-zinc-300">
+            <span className="w-[150px] text-right text-[9px] font-semibold uppercase tracking-wide text-zinc-300">
               Ações
             </span>
           </div>
@@ -107,7 +128,7 @@ export function Multas({ cliente }: Props) {
               <span className="flex-1 text-xs text-zinc-600">{m.ait || '—'}</span>
               <span className="flex-1 text-xs text-zinc-600">{formatarData(m.data_cadastro)}</span>
               <span className="flex-1 text-right text-xs font-semibold text-zinc-600">{formatarMoeda(m.valor)}</span>
-              <span className="flex w-[80px] justify-end">
+              <span className="flex w-[150px] justify-end gap-1.5">
                 {m.link_ait ? (
                   <a
                     href={m.link_ait}
@@ -120,6 +141,13 @@ export function Multas({ cliente }: Props) {
                 ) : (
                   <span className="text-xs text-zinc-300">—</span>
                 )}
+                <button
+                  onClick={() => setMultaSelecionada(m)}
+                  className="flex items-center gap-1 rounded-md bg-zinc-100 px-2 py-1 text-[10px] font-semibold text-zinc-600"
+                >
+                  <Eye size={11} />
+                  Detalhes
+                </button>
               </span>
             </div>
           ))}

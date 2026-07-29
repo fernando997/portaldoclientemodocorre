@@ -1,5 +1,5 @@
-import type { Cliente } from '@/types/cliente'
-import type { BubbleResposta, BubbleParcela, BubbleVeiculo, BubbleFiador } from '@/data/bubble-estrutura'
+import type { Cliente, Contrato } from '@/types/cliente'
+import type { BubbleResposta, BubbleParcela, BubbleVeiculo, BubbleFiador, BubbleContrato } from '@/data/bubble-estrutura'
 import { logCaminhos } from '@/lib/debug-log'
 
 export function timestampParaData(ts: number): string {
@@ -20,7 +20,7 @@ export function mapearParcela(p: BubbleParcela, index: number): Cliente['parcela
   }
 }
 
-function mapearVeiculo(v: BubbleVeiculo) {
+export function mapearVeiculo(v: BubbleVeiculo) {
   const partes = v.modelo.split('/')
   const marca = partes[0]?.trim() ?? ''
   const modelo = partes[1]?.trim() ?? v.modelo
@@ -37,7 +37,7 @@ function mapearVeiculo(v: BubbleVeiculo) {
   }
 }
 
-function mapearFiador(f: BubbleFiador) {
+export function mapearFiador(f: BubbleFiador) {
   return {
     nome: f.nome,
     cpf: f.cpf,
@@ -45,10 +45,81 @@ function mapearFiador(f: BubbleFiador) {
   }
 }
 
+function ordenarESelecionar(contratos: Contrato[]): Contrato[] {
+  const porRecencia = [...contratos].sort((a, b) => b.data_inicio.localeCompare(a.data_inicio))
+  const selecionado =
+    porRecencia.find((c) => c.status === 'ativo') ??
+    porRecencia.find((c) => c.status !== 'reprovado') ??
+    porRecencia[0] ??
+    null
+  if (!selecionado) return porRecencia
+  return [selecionado, ...porRecencia.filter((c) => c.id !== selecionado.id)]
+}
+
+interface ContextoContratoPrimario {
+  ctPrimarioId: string | undefined
+  veiculoPrimario: ReturnType<typeof mapearVeiculo> | null
+  documentoPrimario: string | undefined
+  fiadorPrimario: ReturnType<typeof mapearFiador> | null
+  nomePlanoPrimario: string
+  prazoDiasPrimario: number | null
+  prazoMesesPrimario: number | null
+  totalParcelas: number
+  parcelasPagas: number
+  parcelasRestantes: number
+  validadeCnh: string
+}
+
+function mapearContratoDaLista(ct: BubbleContrato, ctx: ContextoContratoPrimario): Contrato {
+  const ehPrimario = ct._id === ctx.ctPrimarioId
+
+  const planoObj = typeof ct.planos === 'object' ? ct.planos : null
+  const prazoObj = typeof ct.prazo === 'object' ? ct.prazo : null
+
+  const descricao = planoObj?.['descrição'] ?? planoObj?.['descricao'] ?? (ehPrimario ? ctx.nomePlanoPrimario : '')
+  const prazoDias = prazoObj?.dias ?? (ehPrimario ? ctx.prazoDiasPrimario : null)
+  const prazoMeses = prazoObj?.meses ?? (ehPrimario ? ctx.prazoMesesPrimario : null)
+
+  const veiculo =
+    ehPrimario && ctx.veiculoPrimario
+      ? ctx.veiculoPrimario
+      : { placa: ct.placa ?? '', modelo: '', marca: '', ano: 0, cor: '', chassi: '', km: 0 }
+
+  const inicio = ct['Created Date']
+
+  return {
+    id: ct._id,
+    numero: ct['Numero ctr'],
+    veiculo_id: '',
+    veiculo,
+    descricao,
+    prazo_dias: prazoDias,
+    prazo_meses: prazoMeses,
+    data_inicio: inicio ? timestampParaData(inicio) : '',
+    data_fim: (() => {
+      if (!inicio || !prazoMeses) return ct.fim ? timestampParaData(ct.fim) : ''
+      const d = new Date(inicio)
+      d.setMonth(d.getMonth() + prazoMeses)
+      return d.toISOString().split('T')[0]
+    })(),
+    valor_total: ct.parcela_final ?? 0,
+    total_parcelas: ctx.totalParcelas,
+    parcelas_pagas: ctx.parcelasPagas,
+    parcelas_restantes: ctx.parcelasRestantes,
+    status: ct.status ?? '',
+    validade_cnh: ctx.validadeCnh,
+    fiador: ehPrimario ? (ctx.fiadorPrimario?.nome ?? '') : '',
+    cpf_fiador: ehPrimario ? (ctx.fiadorPrimario?.cpf ?? '') : '',
+    telefone_fiador: ehPrimario ? (ctx.fiadorPrimario?.telefone ?? '') : '',
+    link_contrato: ct.url_contrato ? `https:${ct.url_contrato}` : null,
+    link_documento_moto: ehPrimario && ctx.documentoPrimario ? `https:${ctx.documentoPrimario}` : null,
+  }
+}
+
 export function mapearCliente(bubble: BubbleResposta['response']): Cliente {
   logCaminhos(bubble, 'response')
   const c = bubble.cliente
-  const ct = Object.keys(bubble.contrato).length > 0 ? bubble.contrato : null
+  const ct = Object.keys(bubble.contrato).length > 0 ? (bubble.contrato as BubbleContrato) : null
   const veiculo = bubble.veiculo ? mapearVeiculo(bubble.veiculo) : null
   const fiador = bubble.fiador ? mapearFiador(bubble.fiador) : null
   const parcelas = (bubble.parcelas ?? []).map((p, i) => mapearParcela(p, i))
@@ -73,6 +144,26 @@ export function mapearCliente(bubble: BubbleResposta['response']): Cliente {
   const prazoDias  = prazoObj?.dias  ?? bubble.prazo_dias  ?? null
   const prazoMeses = prazoObj?.meses ?? bubble.prazo_meses ?? null
 
+  const listaBruta: BubbleContrato[] = bubble.contratos?.length ? bubble.contratos : ct ? [ct] : []
+
+  const contratos = ordenarESelecionar(
+    listaBruta.map((item) =>
+      mapearContratoDaLista(item, {
+        ctPrimarioId: ct?._id,
+        veiculoPrimario: veiculo,
+        documentoPrimario: bubble.veiculo?.documento,
+        fiadorPrimario: fiador,
+        nomePlanoPrimario: nomePlano,
+        prazoDiasPrimario: prazoDias,
+        prazoMesesPrimario: prazoMeses,
+        totalParcelas,
+        parcelasPagas,
+        parcelasRestantes,
+        validadeCnh: c.cnh_validade ?? '',
+      })
+    )
+  )
+
   return {
     id: c._id,
     foto_url: c.foto_face ? `https:${c.foto_face}` : null,
@@ -94,47 +185,13 @@ export function mapearCliente(bubble: BubbleResposta['response']): Cliente {
       estado: c.estado ?? '',
       cep: c.cep ? String(c.cep) : '',
     },
-    contratos: ct ? [{
-      id: (ct as any)._id,
-      numero: (ct as any)['Numero ctr'],
-      veiculo_id: bubble.veiculo?._id ?? '',
-      veiculo: veiculo ?? {
-        placa: '',
-        modelo: '',
-        marca: '',
-        ano: 0,
-        cor: '',
-        chassi: '',
-        km: 0,
-      },
-      descricao: nomePlano,
-      prazo_dias: prazoDias,
-      prazo_meses: prazoMeses,
-      data_inicio: (ct as any)['Created Date'] ? timestampParaData((ct as any)['Created Date']) : '',
-      data_fim: (() => {
-        const inicio = (ct as any)['Created Date']
-        const meses = prazoMeses
-        if (!inicio || !meses) return (ct as any).fim ? timestampParaData((ct as any).fim) : ''
-        const d = new Date(inicio)
-        d.setMonth(d.getMonth() + meses)
-        return d.toISOString().split('T')[0]
-      })(),
-      valor_total: (ct as any).parcela_final ?? 0,
-      total_parcelas: totalParcelas,
-      parcelas_pagas: parcelasPagas,
-      parcelas_restantes: parcelasRestantes,
-      status: (ct as any).status ?? '',
-      validade_cnh: c.cnh_validade ?? '',
-      fiador: fiador?.nome ?? '',
-      cpf_fiador: fiador?.cpf ?? '',
-      telefone_fiador: fiador?.telefone ?? '',
-      link_contrato: (ct as any).url_contrato ? `https:${(ct as any).url_contrato}` : null,
-      link_documento_moto: bubble.veiculo?.documento ? `https:${bubble.veiculo.documento}` : null,
-    }] : [],
+    contratos,
     parcelas,
     lancamentos: [],
     vistorias: [],
     tabela_tarifaria: [],
     multas: [],
+    ordens_servico: [],
+    planos_manutencao: [],
   }
 }
