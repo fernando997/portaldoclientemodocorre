@@ -23,6 +23,7 @@ import { AlertaBloqueio } from '@/components/portal/AlertaBloqueio'
 import { SolicitarDesbloqueio } from '@/components/portal/SolicitarDesbloqueio'
 import { WhatsAppButton } from '@/components/portal/WhatsAppButton'
 import { abrirPopup } from '@/lib/abrir-link'
+import { obterPosicaoAtual, verificarPermissaoLocalizacao, capturarLocalizacaoAtual } from '@/services/localizacao'
 import { showToast } from '@/components/Toast'
 import { resolverStatusParcela } from '@/utils/parcela'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
@@ -71,15 +72,24 @@ function formatarDataCurta(iso: string) {
   return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]}`
 }
 
-async function buscarStatusDesbloqueio(contratoIdAlvo: string): Promise<string | null> {
+interface StatusDesbloqueio {
+  status: string | null
+  criadoEm: string | null
+}
+
+async function buscarStatusDesbloqueio(contratoIdAlvo: string): Promise<StatusDesbloqueio> {
   const res = await fetch(`${BUBBLE_BASE_URL}/portal-cliente_vistorias`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ contrato: contratoIdAlvo, apikey: BUBBLE_API_KEY }),
   })
   const data = await res.json()
-  if (data.status !== 'success') return null
-  return data.response.desbloqueio?.status ?? null
+  if (data.status !== 'success') return { status: null, criadoEm: null }
+  const desb = data.response.desbloqueio
+  return {
+    status: desb?.status ?? null,
+    criadoEm: desb?.['Created Date'] ? new Date(desb['Created Date']).toISOString() : null,
+  }
 }
 
 export function PortalPage() {
@@ -91,6 +101,9 @@ export function PortalPage() {
   const [alertaFechado, setAlertaFechado] = useState(false)
   const [filtroBloqueioAtivo, setFiltroBloqueioAtivo] = useState(false)
   const [solicitandoDesbloqueio, setSolicitandoDesbloqueio] = useState(false)
+  const solicitandoDesbloqueioRef = useRef(false)
+  const [atualizandoStatusDesbloqueio, setAtualizandoStatusDesbloqueio] = useState(false)
+  const atualizandoStatusDesbloqueioRef = useRef(false)
   const [dropdownVisivel, setDropdownVisivel] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [contratoDropdownVisivel, setContratoDropdownVisivel] = useState(false)
@@ -204,7 +217,7 @@ export function PortalPage() {
 
     async function verificarDesbloqueio() {
       try {
-        const status = await buscarStatusDesbloqueio(idAtual)
+        const { status, criadoEm } = await buscarStatusDesbloqueio(idAtual)
         if (cancelado) return
 
         const clienteAtual = useAuthStore.getState().cliente
@@ -213,7 +226,9 @@ export function PortalPage() {
         setCliente({
           ...clienteAtual,
           contratos: clienteAtual.contratos.map((c) =>
-            c.id === contratoId ? { ...c, solicitacao_desbloqueio_status: status } : c
+            c.id === contratoId
+              ? { ...c, solicitacao_desbloqueio_status: status, solicitacao_desbloqueio_criada_em: criadoEm }
+              : c
           ),
         })
       } catch (err) {
@@ -225,6 +240,14 @@ export function PortalPage() {
       cancelado = true
     }
   }, [contratoId, setCliente])
+
+  // Tick pra fase da solicitação (aguardando → atualizar) mudar sozinha
+  // depois de 30min, mesmo sem o usuário interagir com a tela.
+  const [agora, setAgora] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setAgora(Date.now()), 30_000)
+    return () => clearInterval(id)
+  }, [])
 
   if (!cliente) return null
 
@@ -252,23 +275,46 @@ export function PortalPage() {
 
   const contratosSelecionaveis = cliente.contratos.filter((c) => c.status !== 'reprovado')
 
+  // Parcelas que já autorizaram o bloqueio em algum momento — usadas só pra
+  // confirmar que este contrato é do tipo "bloqueio por inadimplência".
+  const parcelasBloqueioAutorizado = parcelasContratoAtual.filter(
+    (p) => p.bloqueio_autorizado.toUpperCase() === 'AUTORIZADO'
+  )
+  // Dessas, as que ainda estão atrasadas de verdade — CANCELADO nunca vira
+  // PAGO e parcela futura (a_vencer) ainda não é motivo de bloqueio, então
+  // as duas são ignoradas aqui.
+  const parcelasBloqueioPendente = parcelasBloqueioAutorizado.filter(
+    (p) => resolverStatusParcela(p.status, p.vencimento) === 'atrasada'
+  )
+  const elegivelDesbloqueio =
+    contrato?.bloqueio.toUpperCase() === 'BLOQUEADO' &&
+    parcelasBloqueioAutorizado.length > 0 &&
+    parcelasBloqueioPendente.length === 0
+
+  const statusDesbloqueio = contrato?.solicitacao_desbloqueio_status?.toUpperCase() ?? null
+  const desbloqueioConcluido = statusDesbloqueio === 'CONCLUIDO'
+
+  // Uma vez concluído, o aviso de risco de bloqueio some junto — o motivo
+  // que gerou os dois já foi resolvido.
   const emRiscoBloqueio =
+    !desbloqueioConcluido &&
     contrato?.bloqueio.toUpperCase() === 'BLOQUEADO' &&
     parcelasContratoAtual.some(
       (p) => p.status.toUpperCase() === 'GERADO' && p.bloqueio_autorizado.toUpperCase() === 'AUTORIZADO'
     )
 
-  const parcelasBloqueioAutorizado = parcelasContratoAtual.filter(
-    (p) => p.bloqueio_autorizado.toUpperCase() === 'AUTORIZADO'
-  )
-  const elegivelDesbloqueio =
-    contrato?.bloqueio.toUpperCase() === 'BLOQUEADO' &&
-    parcelasBloqueioAutorizado.length > 0 &&
-    parcelasBloqueioAutorizado.every((p) => p.status.toUpperCase() === 'PAGO')
+  const criadoEmMs = contrato?.solicitacao_desbloqueio_criada_em
+    ? new Date(contrato.solicitacao_desbloqueio_criada_em).getTime()
+    : null
+  const minutosDesdeSolicitacao = criadoEmMs !== null ? (agora - criadoEmMs) / 60_000 : null
 
-  const statusDesbloqueio = contrato?.solicitacao_desbloqueio_status?.toUpperCase() ?? null
-  const mostrarBotaoDesbloqueio = elegivelDesbloqueio && statusDesbloqueio !== 'CONCLUIDO'
-  const desbloqueioPendente = statusDesbloqueio === 'PENDENTE'
+  const mostrarBotaoDesbloqueio = elegivelDesbloqueio && !desbloqueioConcluido
+  const faseDesbloqueio: 'solicitar' | 'aguardando' | 'atualizar' =
+    statusDesbloqueio === 'PENDENTE' && minutosDesdeSolicitacao !== null && minutosDesdeSolicitacao >= 30
+      ? 'atualizar'
+      : statusDesbloqueio === 'PENDENTE'
+        ? 'aguardando'
+        : 'solicitar'
 
   function irParaPagamentos(comFiltroBloqueio: boolean) {
     setSecaoAtiva('proximos-pagamentos')
@@ -276,19 +322,22 @@ export function PortalPage() {
   }
 
   async function solicitarDesbloqueio() {
-    if (!contrato || solicitandoDesbloqueio) return
+    if (!contrato || solicitandoDesbloqueioRef.current) return
+    solicitandoDesbloqueioRef.current = true
     setSolicitandoDesbloqueio(true)
     try {
       // Reconfere na hora do clique — evita criar pedido duplicado se o
       // status já foi resolvido/pendente e a tela ainda não atualizou.
-      const statusAtual = await buscarStatusDesbloqueio(contrato.id)
+      const { status: statusAtual, criadoEm: criadoEmAtual } = await buscarStatusDesbloqueio(contrato.id)
       if (statusAtual?.toUpperCase() === 'CONCLUIDO' || statusAtual?.toUpperCase() === 'PENDENTE') {
         const clienteAtual = useAuthStore.getState().cliente
         if (clienteAtual) {
           setCliente({
             ...clienteAtual,
             contratos: clienteAtual.contratos.map((c) =>
-              c.id === contrato.id ? { ...c, solicitacao_desbloqueio_status: statusAtual } : c
+              c.id === contrato.id
+                ? { ...c, solicitacao_desbloqueio_status: statusAtual, solicitacao_desbloqueio_criada_em: criadoEmAtual }
+                : c
             ),
           })
         }
@@ -301,8 +350,40 @@ export function PortalPage() {
         return
       }
 
+      // Localização é obrigatória para solicitar o desbloqueio — sem
+      // exceção. Se o navegador já sabe que está bloqueada, nem tenta —
+      // avisa direto como reativar, porque o popup nativo não reabre
+      // sozinho depois de um bloqueio explícito.
+      const permissaoLocalizacao = await verificarPermissaoLocalizacao()
+      if (permissaoLocalizacao === 'denied') {
+        showToast(
+          'error',
+          'Você bloqueou o acesso à localização deste site. Toque no ícone de cadeado/localização ao lado do endereço no navegador, permita manualmente e tente de novo.'
+        )
+        return
+      }
+      if (permissaoLocalizacao !== 'granted') {
+        showToast('info', 'Precisamos da sua localização — clique em "Permitir" na janela que vai abrir.')
+      }
+      let posicao: GeolocationPosition
+      try {
+        posicao = await obterPosicaoAtual()
+      } catch (err) {
+        console.warn('[SOLICITAR DESBLOQUEIO] localização negada ou indisponível', err)
+        showToast(
+          'error',
+          'Para solicitar o desbloqueio você deve permitir sua localização. Se já negou antes, ative a permissão de localização deste site nas configurações do navegador e tente novamente.'
+        )
+        return
+      }
+
       const url = `${BUBBLE_BASE_URL}/solicitar-desbloqueio`
-      const body = { contrato: contrato.id, apikey: BUBBLE_API_KEY }
+      const body = {
+        contrato: contrato.id,
+        apikey: BUBBLE_API_KEY,
+        latitude: posicao.coords.latitude,
+        longitude: posicao.coords.longitude,
+      }
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -318,7 +399,13 @@ export function PortalPage() {
         setCliente({
           ...clienteAtual,
           contratos: clienteAtual.contratos.map((c) =>
-            c.id === contrato.id ? { ...c, solicitacao_desbloqueio_status: 'PENDENTE' } : c
+            c.id === contrato.id
+              ? {
+                  ...c,
+                  solicitacao_desbloqueio_status: 'PENDENTE',
+                  solicitacao_desbloqueio_criada_em: new Date().toISOString(),
+                }
+              : c
           ),
         })
       }
@@ -327,7 +414,44 @@ export function PortalPage() {
       console.error('[SOLICITAR DESBLOQUEIO] erro', err)
       showToast('error', 'Erro ao conectar. Tente novamente.')
     } finally {
+      solicitandoDesbloqueioRef.current = false
       setSolicitandoDesbloqueio(false)
+    }
+  }
+
+  async function atualizarStatusDesbloqueio() {
+    if (!contrato || atualizandoStatusDesbloqueioRef.current) return
+    atualizandoStatusDesbloqueioRef.current = true
+    setAtualizandoStatusDesbloqueio(true)
+    try {
+      // Registra a localização de novo, só pra log — não trava a conferência
+      // de status se o usuário não permitir dessa vez.
+      capturarLocalizacaoAtual(contrato.id)
+
+      const { status, criadoEm } = await buscarStatusDesbloqueio(contrato.id)
+      const clienteAtual = useAuthStore.getState().cliente
+      if (clienteAtual) {
+        setCliente({
+          ...clienteAtual,
+          contratos: clienteAtual.contratos.map((c) =>
+            c.id === contrato.id
+              ? { ...c, solicitacao_desbloqueio_status: status, solicitacao_desbloqueio_criada_em: criadoEm }
+              : c
+          ),
+        })
+      }
+      showToast(
+        status?.toUpperCase() === 'CONCLUIDO' ? 'success' : 'info',
+        status?.toUpperCase() === 'CONCLUIDO'
+          ? 'Desbloqueio concluído! Está tudo certo com seu contrato.'
+          : 'Sua solicitação ainda está sendo processada. Tente novamente em instantes.'
+      )
+    } catch (err) {
+      console.error('[ATUALIZAR STATUS DESBLOQUEIO] erro', err)
+      showToast('error', 'Erro ao conectar. Tente novamente.')
+    } finally {
+      atualizandoStatusDesbloqueioRef.current = false
+      setAtualizandoStatusDesbloqueio(false)
     }
   }
 
@@ -374,9 +498,10 @@ export function PortalPage() {
       {emRiscoBloqueio && <AlertaBloqueio onClick={() => irParaPagamentos(true)} />}
       {mostrarBotaoDesbloqueio && (
         <SolicitarDesbloqueio
-          onClick={solicitarDesbloqueio}
-          loading={solicitandoDesbloqueio}
-          pendente={desbloqueioPendente}
+          fase={faseDesbloqueio}
+          loading={faseDesbloqueio === 'atualizar' ? atualizandoStatusDesbloqueio : solicitandoDesbloqueio}
+          onSolicitar={solicitarDesbloqueio}
+          onAtualizar={atualizarStatusDesbloqueio}
         />
       )}
 

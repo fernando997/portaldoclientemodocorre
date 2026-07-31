@@ -3,7 +3,7 @@ import { useEffect } from 'react'
 
 interface ToastItem {
   id: number
-  type: 'success' | 'error'
+  type: 'success' | 'error' | 'info'
   text: string
 }
 
@@ -19,7 +19,7 @@ const useToastStore = create<ToastState>((set) => ({
   dismiss: (id) => set((s) => ({ items: s.items.filter((i) => i.id !== id) })),
 }))
 
-export function showToast(type: 'success' | 'error', text: string) {
+export function showToast(type: 'success' | 'error' | 'info', text: string) {
   useToastStore.getState().push({ type, text })
 }
 
@@ -45,7 +45,7 @@ function ToastCard({ item, onDismiss }: { item: ToastItem; onDismiss: () => void
   return (
     <div
       className={`rounded-xl px-4 py-3 text-sm font-medium text-white shadow-lg ${
-        item.type === 'success' ? 'bg-accent' : 'bg-danger'
+        item.type === 'success' ? 'bg-accent' : item.type === 'info' ? 'bg-sky-600' : 'bg-danger'
       }`}
     >
       {item.text}

@@ -41,6 +41,7 @@ export interface Contrato {
   link_documento_moto: string | null
   bloqueio: string
   solicitacao_desbloqueio_status: string | null
+  solicitacao_desbloqueio_criada_em: string | null
 }
 
 export type StatusParcela = 'paga' | 'atrasada' | 'a_vencer'

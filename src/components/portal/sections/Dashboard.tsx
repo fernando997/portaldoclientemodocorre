@@ -115,36 +115,38 @@ export function Dashboard({ cliente, onVerPlanos }: Props) {
         </div>
       )}
 
-      <div className="flex flex-col gap-2.5 rounded-2xl border border-border bg-white p-4 shadow-sm">
-        <div className="flex items-center gap-2">
-          <Clock size={18} className="text-accent" />
-          <span className="text-[13px] font-semibold uppercase tracking-wide text-text-muted">Tempo do Contrato</span>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="mb-0.5 text-xs text-text-muted">Início</p>
-            <p className="text-sm font-bold text-text-body">{formatarData(contrato.data_inicio)}</p>
+      {contrato.numero >= 1209 && (
+        <div className="flex flex-col gap-2.5 rounded-2xl border border-border bg-white p-4 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Clock size={18} className="text-accent" />
+            <span className="text-[13px] font-semibold uppercase tracking-wide text-text-muted">Tempo do Contrato</span>
           </div>
-          <ArrowRight size={16} className="text-text-muted" />
-          <div className="text-right">
-            <p className="mb-0.5 text-xs text-text-muted">Término</p>
-            <p className="text-sm font-bold text-text-body">{formatarData(contrato.data_fim)}</p>
+
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="mb-0.5 text-xs text-text-muted">Início</p>
+              <p className="text-sm font-bold text-text-body">{formatarData(contrato.data_inicio)}</p>
+            </div>
+            <ArrowRight size={16} className="text-text-muted" />
+            <div className="text-right">
+              <p className="mb-0.5 text-xs text-text-muted">Término</p>
+              <p className="text-sm font-bold text-text-body">{formatarData(contrato.data_fim)}</p>
+            </div>
+          </div>
+
+          <div className="h-1.5 overflow-hidden rounded-full bg-surface">
+            <div className="h-1.5 rounded-full bg-accent" style={{ width: `${porcentagem}%` }} />
+          </div>
+
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-text-muted">{porcentagem}% do período</span>
+            <span className="flex items-center gap-1 rounded-full bg-accent-light px-2 py-0.5 text-xs font-semibold text-accent">
+              <Hourglass size={11} />
+              {tempoRestante} restante{progresso >= 1 ? '' : 's'}
+            </span>
           </div>
         </div>
-
-        <div className="h-1.5 overflow-hidden rounded-full bg-surface">
-          <div className="h-1.5 rounded-full bg-accent" style={{ width: `${porcentagem}%` }} />
-        </div>
-
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-text-muted">{porcentagem}% do período</span>
-          <span className="flex items-center gap-1 rounded-full bg-accent-light px-2 py-0.5 text-xs font-semibold text-accent">
-            <Hourglass size={11} />
-            {tempoRestante} restante{progresso >= 1 ? '' : 's'}
-          </span>
-        </div>
-      </div>
+      )}
 
       <div className="flex flex-col gap-2.5 rounded-2xl border border-border bg-white p-4 shadow-sm">
         <div className="flex items-center gap-2">

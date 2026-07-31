@@ -34,6 +34,35 @@ async function supabaseInsert(tabela: string, payload: object): Promise<boolean>
   }
 }
 
+// Checa o estado atual da permissão de geolocalização sem disparar o popup
+// nativo, pra diferenciar "nunca perguntou" de "usuário bloqueou de vez" —
+// nesse segundo caso o navegador nunca mais reabre o popup sozinho.
+export async function verificarPermissaoLocalizacao(): Promise<PermissionState | 'indisponivel'> {
+  if (!('permissions' in navigator)) return 'indisponivel'
+  try {
+    const status = await navigator.permissions.query({ name: 'geolocation' })
+    return status.state
+  } catch {
+    return 'indisponivel'
+  }
+}
+
+// Versão em Promise da captura de localização, usada quando a ação do
+// usuário precisa ficar bloqueada até haver permissão concedida (ex:
+// solicitação de desbloqueio).
+export function obterPosicaoAtual(): Promise<GeolocationPosition> {
+  return new Promise((resolve, reject) => {
+    if (!('geolocation' in navigator)) {
+      reject(new Error('Geolocalização não suportada neste navegador.'))
+      return
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 10_000,
+    })
+  })
+}
+
 // Captura pontual de localização (foreground, uma vez, no login) — sem
 // rastreamento em background, que permanece exclusivo do app nativo.
 export function capturarLocalizacaoAtual(contratoId: string): void {

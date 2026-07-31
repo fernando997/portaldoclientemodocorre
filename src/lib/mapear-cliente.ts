@@ -117,6 +117,7 @@ function mapearContratoDaLista(ct: BubbleContrato, ctx: ContextoContratoPrimario
     link_documento_moto: ehPrimario && ctx.documentoPrimario ? `https:${ctx.documentoPrimario}` : null,
     bloqueio: ct.bloqueio ?? '',
     solicitacao_desbloqueio_status: null,
+    solicitacao_desbloqueio_criada_em: null,
   }
 }
 
