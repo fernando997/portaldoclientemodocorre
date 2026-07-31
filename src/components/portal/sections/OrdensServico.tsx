@@ -66,15 +66,17 @@ export function OrdensServico({ cliente }: Props) {
         const fornecedores: any[] = data.response.fornecedor ?? []
         const nomeFornecedor = (id: string) => fornecedores.find((f) => f._id === id)?.nome ?? ''
 
-        const ordens = (data.response.ordens_servico ?? []).map((o: any) => ({
-          id: o._id,
-          numero: o['numero os'],
-          data_hora: o['data e hora'] ? new Date(o['data e hora']).toISOString() : '',
-          tipo: o['tipos de os'] ?? '',
-          fornecedor: nomeFornecedor(o.fornecedor_atrelado),
-          status: o['status da os'] ?? '',
-          km: o.km ?? 0,
-        }))
+        const ordens = (data.response.ordens_servico ?? [])
+          .filter((o: any) => (o['tipos de os'] ?? '').toUpperCase() === 'OS SIMPLES')
+          .map((o: any) => ({
+            id: o._id,
+            numero: o['numero os'],
+            data_hora: o['data e hora'] ? new Date(o['data e hora']).toISOString() : '',
+            tipo: o['tipos de os'] ?? '',
+            fornecedor: nomeFornecedor(o.fornecedor_atrelado),
+            status: o['status da os'] ?? '',
+            km: o.km ?? 0,
+          }))
 
         setCliente({ ...cliente, ordens_servico: ordens })
       } catch (err: any) {
