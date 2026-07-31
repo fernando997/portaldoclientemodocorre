@@ -38,3 +38,9 @@ body {
   color: var(--color-text-body);
   font-family: var(--font-sans);
 }
+
+button:not(:disabled),
+a[href],
+[role="button"] {
+  cursor: pointer;
+}
