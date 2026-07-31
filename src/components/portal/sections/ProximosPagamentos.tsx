@@ -26,7 +26,10 @@ interface Props {
 }
 
 export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
-  const emAberto = cliente.parcelas
+  const contrato = cliente.contratos[0]
+  const parcelasContratoAtual = contrato ? cliente.parcelas.filter((p) => p.contrato_id === contrato.id) : []
+
+  const emAberto = parcelasContratoAtual
     .filter((p) => {
       const s = resolverStatusParcela(p.status, p.vencimento)
       if (s !== 'atrasada' && s !== 'a_vencer') return false
@@ -37,7 +40,7 @@ export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
     })
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
 
-  const atrasadas = cliente.parcelas.filter((p) => resolverStatusParcela(p.status, p.vencimento) === 'atrasada')
+  const atrasadas = parcelasContratoAtual.filter((p) => resolverStatusParcela(p.status, p.vencimento) === 'atrasada')
   const proxima = emAberto[0] ?? null
 
   const [osAberta, setOsAberta] = useState<OSSimples | null>(null)

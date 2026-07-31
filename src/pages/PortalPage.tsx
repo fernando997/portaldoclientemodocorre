@@ -228,7 +228,10 @@ export function PortalPage() {
 
   if (!cliente) return null
 
-  const emAberto = cliente.parcelas
+  const contrato = cliente.contratos[0]
+  const parcelasContratoAtual = contrato ? cliente.parcelas.filter((p) => p.contrato_id === contrato.id) : []
+
+  const emAberto = parcelasContratoAtual
     .filter((p) => {
       const s = resolverStatusParcela(p.status, p.vencimento)
       return s === 'atrasada' || s === 'a_vencer'
@@ -236,7 +239,7 @@ export function PortalPage() {
     .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
 
   const proxima = emAberto[0] ?? null
-  const temAtrasadas = cliente.parcelas.some((p) => resolverStatusParcela(p.status, p.vencimento) === 'atrasada')
+  const temAtrasadas = parcelasContratoAtual.some((p) => resolverStatusParcela(p.status, p.vencimento) === 'atrasada')
 
   const diasParaVencer = proxima
     ? Math.ceil(
@@ -247,17 +250,15 @@ export function PortalPage() {
 
   const isWarning = diasParaVencer !== null && diasParaVencer <= 2 && !temAtrasadas
 
-  const contrato = cliente.contratos[0]
   const contratosSelecionaveis = cliente.contratos.filter((c) => c.status !== 'reprovado')
 
   const emRiscoBloqueio =
     contrato?.bloqueio.toUpperCase() === 'BLOQUEADO' &&
-    cliente.parcelas.some(
+    parcelasContratoAtual.some(
       (p) => p.status.toUpperCase() === 'GERADO' && p.bloqueio_autorizado.toUpperCase() === 'AUTORIZADO'
     )
 
-  const parcelasDoContrato = contrato ? cliente.parcelas.filter((p) => p.contrato_id === contrato.id) : []
-  const parcelasBloqueioAutorizado = parcelasDoContrato.filter(
+  const parcelasBloqueioAutorizado = parcelasContratoAtual.filter(
     (p) => p.bloqueio_autorizado.toUpperCase() === 'AUTORIZADO'
   )
   const elegivelDesbloqueio =
@@ -381,7 +382,7 @@ export function PortalPage() {
 
       {temAtrasadas && !alertaFechado && (
         <AlertaAtraso
-          parcelas={cliente.parcelas}
+          parcelas={parcelasContratoAtual}
           onClose={() => setAlertaFechado(true)}
           onVerPagamentos={() => {
             irParaPagamentos(false)

@@ -28,7 +28,9 @@ interface Props {
 }
 
 export function ParcelasPagas({ cliente }: Props) {
-  const pagas = cliente.parcelas.filter((p) => resolverStatusParcela(p.status, p.vencimento) === 'paga')
+  const contrato = cliente.contratos[0]
+  const parcelasContratoAtual = contrato ? cliente.parcelas.filter((p) => p.contrato_id === contrato.id) : []
+  const pagas = parcelasContratoAtual.filter((p) => resolverStatusParcela(p.status, p.vencimento) === 'paga')
   const totalPago = pagas.reduce((acc, p) => acc + p.valor, 0)
 
   const [pagina, setPagina] = useState(1)

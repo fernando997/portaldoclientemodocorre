@@ -63,9 +63,7 @@ interface ContextoContratoPrimario {
   nomePlanoPrimario: string
   prazoDiasPrimario: number | null
   prazoMesesPrimario: number | null
-  totalParcelas: number
-  parcelasPagas: number
-  parcelasRestantes: number
+  parcelasContrato: Cliente['parcelas']
   validadeCnh: string
 }
 
@@ -86,6 +84,11 @@ function mapearContratoDaLista(ct: BubbleContrato, ctx: ContextoContratoPrimario
 
   const inicio = ct['Created Date']
 
+  const parcelasDesteContrato = ctx.parcelasContrato.filter((p) => p.contrato_id === ct._id)
+  const totalParcelas = parcelasDesteContrato.length
+  const parcelasPagas = parcelasDesteContrato.filter((p) => p.status === 'PAGO').length
+  const parcelasRestantes = totalParcelas - parcelasPagas
+
   return {
     id: ct._id,
     numero: ct['Numero ctr'],
@@ -102,9 +105,9 @@ function mapearContratoDaLista(ct: BubbleContrato, ctx: ContextoContratoPrimario
       return d.toISOString().split('T')[0]
     })(),
     valor_total: ct.parcela_final ?? 0,
-    total_parcelas: ctx.totalParcelas,
-    parcelas_pagas: ctx.parcelasPagas,
-    parcelas_restantes: ctx.parcelasRestantes,
+    total_parcelas: totalParcelas,
+    parcelas_pagas: parcelasPagas,
+    parcelas_restantes: parcelasRestantes,
     status: ct.status ?? '',
     validade_cnh: ctx.validadeCnh,
     fiador: ehPrimario ? (ctx.fiadorPrimario?.nome ?? '') : '',
@@ -127,9 +130,6 @@ export function mapearCliente(bubble: BubbleResposta['response']): Cliente {
 
   // Conta apenas parcelas de tipo CONTRATO para o resumo do plano
   const parcelasContrato = parcelas.filter(p => !p.tipo || p.tipo === 'CONTRATO')
-  const totalParcelas = parcelasContrato.length
-  const parcelasPagas = parcelasContrato.filter(p => p.status === 'PAGO').length
-  const parcelasRestantes = totalParcelas - parcelasPagas
 
   // Fonte primária: key separada planos/prazo como objeto expandido (igual a cliente/veiculo)
   // Fonte alternativa: nome_plano como texto simples
@@ -157,9 +157,7 @@ export function mapearCliente(bubble: BubbleResposta['response']): Cliente {
         nomePlanoPrimario: nomePlano,
         prazoDiasPrimario: prazoDias,
         prazoMesesPrimario: prazoMeses,
-        totalParcelas,
-        parcelasPagas,
-        parcelasRestantes,
+        parcelasContrato,
         validadeCnh: c.cnh_validade ?? '',
       })
     )
