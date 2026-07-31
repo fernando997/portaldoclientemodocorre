@@ -20,14 +20,12 @@ export async function buscarPlanosManutencao(contratoId: string): Promise<PlanoM
     throw new Error(data.message ?? 'Erro ao buscar planos de manutenção')
   }
 
-  console.log('[PLANOS] response completo:', data.response)
-
   const catalogo: any[] = data.response.plano_manutencao ?? []
   const nomePlano = (id: string) => catalogo.find((p) => p._id === id)?.['descrição'] ?? ''
 
   return (data.response.plano_definido ?? []).map((p: any) => ({
     id: p._id,
-    data: p.data ? new Date(p.data).toISOString().split('T')[0] : '',
+    data: p['Created Date'] ? new Date(p['Created Date']).toISOString().split('T')[0] : '',
     descricao: p['descrição'] ?? '',
     km: p.km ?? 0,
     status: p.status ?? '',

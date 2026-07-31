@@ -18,6 +18,7 @@ export function mapearParcela(p: BubbleParcela, index: number): Cliente['parcela
     lancamento_id: p['lançamento'],
     id_pay: p['id asaas'],
     bloqueio_autorizado: p['bloqueio autorizado'] ?? '',
+    contrato_id: p.contrato_atrelado,
   }
 }
 
@@ -48,13 +49,10 @@ export function mapearFiador(f: BubbleFiador) {
 
 function ordenarESelecionar(contratos: Contrato[]): Contrato[] {
   const porRecencia = [...contratos].sort((a, b) => b.data_inicio.localeCompare(a.data_inicio))
-  const selecionado =
-    porRecencia.find((c) => c.status === 'ativo') ??
-    porRecencia.find((c) => c.status !== 'reprovado') ??
-    porRecencia[0] ??
-    null
-  if (!selecionado) return porRecencia
-  return [selecionado, ...porRecencia.filter((c) => c.id !== selecionado.id)]
+  const ativos = porRecencia.filter((c) => c.status === 'ativo')
+  const outros = porRecencia.filter((c) => c.status !== 'ativo' && c.status !== 'reprovado')
+  const reprovados = porRecencia.filter((c) => c.status === 'reprovado')
+  return [...ativos, ...outros, ...reprovados]
 }
 
 interface ContextoContratoPrimario {
@@ -115,6 +113,7 @@ function mapearContratoDaLista(ct: BubbleContrato, ctx: ContextoContratoPrimario
     link_contrato: ct.url_contrato ? `https:${ct.url_contrato}` : null,
     link_documento_moto: ehPrimario && ctx.documentoPrimario ? `https:${ctx.documentoPrimario}` : null,
     bloqueio: ct.bloqueio ?? '',
+    solicitacao_desbloqueio_status: null,
   }
 }
 

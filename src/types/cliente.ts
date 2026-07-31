@@ -40,6 +40,7 @@ export interface Contrato {
   link_contrato: string | null
   link_documento_moto: string | null
   bloqueio: string
+  solicitacao_desbloqueio_status: string | null
 }
 
 export type StatusParcela = 'paga' | 'atrasada' | 'a_vencer'
@@ -88,6 +89,7 @@ export interface Parcela {
   lancamento_id?: string
   id_pay?: string
   bloqueio_autorizado: string
+  contrato_id: string
 }
 
 export interface Vistoria {

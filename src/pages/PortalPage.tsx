@@ -20,6 +20,7 @@ import { useAuthStore } from '@/store/auth'
 import type { Cliente } from '@/types/cliente'
 import { AlertaAtraso } from '@/components/portal/AlertaAtraso'
 import { AlertaBloqueio } from '@/components/portal/AlertaBloqueio'
+import { SolicitarDesbloqueio } from '@/components/portal/SolicitarDesbloqueio'
 import { WhatsAppButton } from '@/components/portal/WhatsAppButton'
 import { abrirPopup } from '@/lib/abrir-link'
 import { showToast } from '@/components/Toast'
@@ -70,6 +71,17 @@ function formatarDataCurta(iso: string) {
   return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]}`
 }
 
+async function buscarStatusDesbloqueio(contratoIdAlvo: string): Promise<string | null> {
+  const res = await fetch(`${BUBBLE_BASE_URL}/portal-cliente_vistorias`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contrato: contratoIdAlvo, apikey: BUBBLE_API_KEY }),
+  })
+  const data = await res.json()
+  if (data.status !== 'success') return null
+  return data.response.desbloqueio?.status ?? null
+}
+
 export function PortalPage() {
   const navigate = useNavigate()
   const cliente = useAuthStore((s) => s.cliente)
@@ -78,6 +90,7 @@ export function PortalPage() {
   const [secaoAtiva, setSecaoAtiva] = useState<Secao>('dashboard')
   const [alertaFechado, setAlertaFechado] = useState(false)
   const [filtroBloqueioAtivo, setFiltroBloqueioAtivo] = useState(false)
+  const [solicitandoDesbloqueio, setSolicitandoDesbloqueio] = useState(false)
   const [dropdownVisivel, setDropdownVisivel] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [contratoDropdownVisivel, setContratoDropdownVisivel] = useState(false)
@@ -182,6 +195,37 @@ export function PortalPage() {
     buscarDetalhesContrato()
   }, [contratoId, detalhesJaCarregados, setCliente])
 
+  // Conferência do status de desbloqueio: roda de novo a cada carregamento/troca
+  // de contrato (sem cache), pra refletir quando a equipe marcar como CONCLUIDO.
+  useEffect(() => {
+    if (!contratoId) return
+    const idAtual = contratoId
+    let cancelado = false
+
+    async function verificarDesbloqueio() {
+      try {
+        const status = await buscarStatusDesbloqueio(idAtual)
+        if (cancelado) return
+
+        const clienteAtual = useAuthStore.getState().cliente
+        if (!clienteAtual) return
+
+        setCliente({
+          ...clienteAtual,
+          contratos: clienteAtual.contratos.map((c) =>
+            c.id === contratoId ? { ...c, solicitacao_desbloqueio_status: status } : c
+          ),
+        })
+      } catch (err) {
+        console.error('[VERIFICAR DESBLOQUEIO] erro', err)
+      }
+    }
+    verificarDesbloqueio()
+    return () => {
+      cancelado = true
+    }
+  }, [contratoId, setCliente])
+
   if (!cliente) return null
 
   const emAberto = cliente.parcelas
@@ -208,11 +252,82 @@ export function PortalPage() {
 
   const emRiscoBloqueio =
     contrato?.bloqueio.toUpperCase() === 'BLOQUEADO' &&
-    cliente.parcelas.some((p) => p.bloqueio_autorizado.toUpperCase() === 'AUTORIZADO')
+    cliente.parcelas.some(
+      (p) => p.status.toUpperCase() === 'GERADO' && p.bloqueio_autorizado.toUpperCase() === 'AUTORIZADO'
+    )
+
+  const parcelasDoContrato = contrato ? cliente.parcelas.filter((p) => p.contrato_id === contrato.id) : []
+  const parcelasBloqueioAutorizado = parcelasDoContrato.filter(
+    (p) => p.bloqueio_autorizado.toUpperCase() === 'AUTORIZADO'
+  )
+  const elegivelDesbloqueio =
+    contrato?.bloqueio.toUpperCase() === 'BLOQUEADO' &&
+    parcelasBloqueioAutorizado.length > 0 &&
+    parcelasBloqueioAutorizado.every((p) => p.status.toUpperCase() === 'PAGO')
+
+  const statusDesbloqueio = contrato?.solicitacao_desbloqueio_status?.toUpperCase() ?? null
+  const mostrarBotaoDesbloqueio = elegivelDesbloqueio && statusDesbloqueio !== 'CONCLUIDO'
+  const desbloqueioPendente = statusDesbloqueio === 'PENDENTE'
 
   function irParaPagamentos(comFiltroBloqueio: boolean) {
     setSecaoAtiva('proximos-pagamentos')
     setFiltroBloqueioAtivo(comFiltroBloqueio)
+  }
+
+  async function solicitarDesbloqueio() {
+    if (!contrato || solicitandoDesbloqueio) return
+    setSolicitandoDesbloqueio(true)
+    try {
+      // Reconfere na hora do clique — evita criar pedido duplicado se o
+      // status já foi resolvido/pendente e a tela ainda não atualizou.
+      const statusAtual = await buscarStatusDesbloqueio(contrato.id)
+      if (statusAtual?.toUpperCase() === 'CONCLUIDO' || statusAtual?.toUpperCase() === 'PENDENTE') {
+        const clienteAtual = useAuthStore.getState().cliente
+        if (clienteAtual) {
+          setCliente({
+            ...clienteAtual,
+            contratos: clienteAtual.contratos.map((c) =>
+              c.id === contrato.id ? { ...c, solicitacao_desbloqueio_status: statusAtual } : c
+            ),
+          })
+        }
+        showToast(
+          'error',
+          statusAtual.toUpperCase() === 'CONCLUIDO'
+            ? 'Esse contrato já foi desbloqueado.'
+            : 'Já existe uma solicitação em andamento.'
+        )
+        return
+      }
+
+      const url = `${BUBBLE_BASE_URL}/solicitar-desbloqueio`
+      const body = { contrato: contrato.id, apikey: BUBBLE_API_KEY }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      const data = await res.json()
+      if (!res.ok || data.status !== 'success') {
+        showToast('error', 'Não foi possível enviar a solicitação. Tente novamente.')
+        return
+      }
+      const clienteAtual = useAuthStore.getState().cliente
+      if (clienteAtual) {
+        setCliente({
+          ...clienteAtual,
+          contratos: clienteAtual.contratos.map((c) =>
+            c.id === contrato.id ? { ...c, solicitacao_desbloqueio_status: 'PENDENTE' } : c
+          ),
+        })
+      }
+      showToast('success', 'Solicitação de desbloqueio enviada!')
+    } catch (err) {
+      console.error('[SOLICITAR DESBLOQUEIO] erro', err)
+      showToast('error', 'Erro ao conectar. Tente novamente.')
+    } finally {
+      setSolicitandoDesbloqueio(false)
+    }
   }
 
   const iniciais = cliente.nome_completo
@@ -256,6 +371,13 @@ export function PortalPage() {
   return (
     <div className="flex min-h-svh flex-col bg-dark">
       {emRiscoBloqueio && <AlertaBloqueio onClick={() => irParaPagamentos(true)} />}
+      {mostrarBotaoDesbloqueio && (
+        <SolicitarDesbloqueio
+          onClick={solicitarDesbloqueio}
+          loading={solicitandoDesbloqueio}
+          pendente={desbloqueioPendente}
+        />
+      )}
 
       {temAtrasadas && !alertaFechado && (
         <AlertaAtraso
