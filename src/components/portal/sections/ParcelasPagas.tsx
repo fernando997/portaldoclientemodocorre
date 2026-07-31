@@ -78,34 +78,37 @@ export function ParcelasPagas({ cliente }: Props) {
           return (
             <div
               key={p.numero}
-              className={`flex items-center px-4 py-3.5 ${isLast ? '' : 'border-b border-surface'}`}
+              className={`flex flex-col gap-1 px-4 py-3.5 ${isLast ? '' : 'border-b border-surface'}`}
             >
-              <span className="flex-[1.2] text-[13px] text-text-body">{formatarData(p.vencimento)}</span>
-              <span className="flex-[1.2] text-[13px] font-semibold text-text-body">{formatarMoeda(p.valor)}</span>
-              <span className="flex-1">
-                {p.tipo ? (
-                  <span
-                    className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
-                    style={{ backgroundColor: tipoCfg.bg, color: tipoCfg.color }}
-                  >
-                    {tipoCfg.label}
-                  </span>
-                ) : (
-                  <span className="text-[13px] text-border">—</span>
-                )}
-              </span>
-              <span className="flex flex-[0.7] justify-end">
-                {p.link_pagamento ? (
-                  <button
-                    onClick={() => abrirLink(p.link_pagamento!)}
-                    className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-accent-light"
-                  >
-                    <ExternalLink size={13} className="text-accent" />
-                  </button>
-                ) : (
-                  <span className="text-[13px] text-border">—</span>
-                )}
-              </span>
+              <div className="flex items-center">
+                <span className="flex-[1.2] text-[13px] text-text-body">{formatarData(p.vencimento)}</span>
+                <span className="flex-[1.2] text-[13px] font-semibold text-text-body">{formatarMoeda(p.valor)}</span>
+                <span className="flex-1">
+                  {p.tipo ? (
+                    <span
+                      className="rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                      style={{ backgroundColor: tipoCfg.bg, color: tipoCfg.color }}
+                    >
+                      {tipoCfg.label}
+                    </span>
+                  ) : (
+                    <span className="text-[13px] text-border">—</span>
+                  )}
+                </span>
+                <span className="flex flex-[0.7] justify-end">
+                  {p.link_pagamento ? (
+                    <button
+                      onClick={() => abrirLink(p.link_pagamento!)}
+                      className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-accent-light"
+                    >
+                      <ExternalLink size={13} className="text-accent" />
+                    </button>
+                  ) : (
+                    <span className="text-[13px] text-border">—</span>
+                  )}
+                </span>
+              </div>
+              {p.descricao && <p className="truncate text-[11px] text-text-faint">{p.descricao}</p>}
             </div>
           )
         })}

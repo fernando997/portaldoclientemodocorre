@@ -249,6 +249,28 @@ export function PortalPage() {
     return () => clearInterval(id)
   }, [])
 
+  // Ao bater 30min ainda PENDENTE, já reconfere sozinho — o usuário não
+  // precisa clicar no botão azul, ele só continua ali como reforço/fallback
+  // caso a checagem automática venha e ainda esteja PENDENTE.
+  const autoVerificarDesbloqueioRef = useRef(false)
+  const contratoIdTick = cliente?.contratos[0]?.id ?? null
+  const statusDesbloqueioTick = cliente?.contratos[0]?.solicitacao_desbloqueio_status?.toUpperCase() ?? null
+  const criadoEmDesbloqueioTick = cliente?.contratos[0]?.solicitacao_desbloqueio_criada_em ?? null
+  useEffect(() => {
+    if (statusDesbloqueioTick !== 'PENDENTE') {
+      autoVerificarDesbloqueioRef.current = false
+      return
+    }
+    const minutos = criadoEmDesbloqueioTick
+      ? (agora - new Date(criadoEmDesbloqueioTick).getTime()) / 60_000
+      : null
+    if (minutos !== null && minutos >= 30 && !autoVerificarDesbloqueioRef.current) {
+      autoVerificarDesbloqueioRef.current = true
+      atualizarStatusDesbloqueio()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agora, contratoIdTick, statusDesbloqueioTick, criadoEmDesbloqueioTick])
+
   if (!cliente) return null
 
   const contrato = cliente.contratos[0]

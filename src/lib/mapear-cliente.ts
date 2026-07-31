@@ -19,6 +19,7 @@ export function mapearParcela(p: BubbleParcela, index: number): Cliente['parcela
     id_pay: p['id asaas'],
     bloqueio_autorizado: p['bloqueio autorizado'] ?? '',
     contrato_id: p.contrato_atrelado,
+    descricao: p['descrição parcela'] ?? '',
   }
 }
 

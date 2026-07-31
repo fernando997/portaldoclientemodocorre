@@ -91,6 +91,7 @@ export interface Parcela {
   id_pay?: string
   bloqueio_autorizado: string
   contrato_id: string
+  descricao: string
 }
 
 export interface Vistoria {

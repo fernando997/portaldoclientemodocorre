@@ -186,39 +186,42 @@ export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
         </div>
 
         {itensPagina.map((p) => (
-          <div key={p.numero} className="flex items-center border-b border-zinc-100 px-3 py-3">
-            <span className="flex-[1.2] text-xs text-zinc-600">{p.vencimento.split('-').reverse().join('/')}</span>
-            <span className="flex-[1.2] text-xs font-semibold text-zinc-600">{formatarMoeda(p.valor)}</span>
-            <span className="flex-[0.8]">
-              {p.link_pagamento ? (
-                <button onClick={() => abrirLink(p.link_pagamento!)} className="text-xs font-semibold text-accent">
-                  Acessar
-                </button>
-              ) : p.id_pay ? (
-                <button
-                  onClick={() => abrirPagamento(p.id_pay!, String(p.numero), p.valor)}
-                  disabled={pagLoadingId === String(p.numero)}
-                  className="text-xs font-semibold text-accent disabled:opacity-50"
-                >
-                  {pagLoadingId === String(p.numero) ? '...' : 'Acessar'}
-                </button>
-              ) : (
-                <span className="text-xs text-zinc-300">—</span>
-              )}
-            </span>
-            <span className="flex-[0.8]">
-              {p.tipo === 'OS' && p.lancamento_id ? (
-                <button
-                  onClick={() => abrirOS(p.lancamento_id!, String(p.numero), p.valor)}
-                  disabled={osLoadingId === String(p.numero)}
-                  className="rounded-md bg-accent-light px-2 py-1 text-[11px] font-semibold text-accent disabled:opacity-50"
-                >
-                  {osLoadingId === String(p.numero) ? '...' : 'OS'}
-                </button>
-              ) : (
-                <span className="text-xs text-zinc-300">—</span>
-              )}
-            </span>
+          <div key={p.numero} className="flex flex-col gap-1 border-b border-zinc-100 px-3 py-3">
+            <div className="flex items-center">
+              <span className="flex-[1.2] text-xs text-zinc-600">{p.vencimento.split('-').reverse().join('/')}</span>
+              <span className="flex-[1.2] text-xs font-semibold text-zinc-600">{formatarMoeda(p.valor)}</span>
+              <span className="flex-[0.8]">
+                {p.link_pagamento ? (
+                  <button onClick={() => abrirLink(p.link_pagamento!)} className="text-xs font-semibold text-accent">
+                    Acessar
+                  </button>
+                ) : p.id_pay ? (
+                  <button
+                    onClick={() => abrirPagamento(p.id_pay!, String(p.numero), p.valor)}
+                    disabled={pagLoadingId === String(p.numero)}
+                    className="text-xs font-semibold text-accent disabled:opacity-50"
+                  >
+                    {pagLoadingId === String(p.numero) ? '...' : 'Acessar'}
+                  </button>
+                ) : (
+                  <span className="text-xs text-zinc-300">—</span>
+                )}
+              </span>
+              <span className="flex-[0.8]">
+                {p.tipo === 'OS' && p.lancamento_id ? (
+                  <button
+                    onClick={() => abrirOS(p.lancamento_id!, String(p.numero), p.valor)}
+                    disabled={osLoadingId === String(p.numero)}
+                    className="rounded-md bg-accent-light px-2 py-1 text-[11px] font-semibold text-accent disabled:opacity-50"
+                  >
+                    {osLoadingId === String(p.numero) ? '...' : 'OS'}
+                  </button>
+                ) : (
+                  <span className="text-xs text-zinc-300">—</span>
+                )}
+              </span>
+            </div>
+            {p.descricao && <p className="truncate text-[11px] text-zinc-400">{p.descricao}</p>}
           </div>
         ))}
 
