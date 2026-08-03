@@ -108,7 +108,7 @@ export function ParcelasPagas({ cliente }: Props) {
                   )}
                 </span>
               </div>
-              {p.descricao && <p className="truncate text-[11px] text-text-faint">{p.descricao}</p>}
+              {p.descricao && <p className="text-[11px] text-zinc-500">{p.descricao}</p>}
             </div>
           )
         })}

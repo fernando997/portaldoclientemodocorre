@@ -27,7 +27,8 @@ import { obterPosicaoAtual, verificarPermissaoLocalizacao, capturarLocalizacaoAt
 import { showToast } from '@/components/Toast'
 import { resolverStatusParcela } from '@/utils/parcela'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
-import { mapearVeiculo, mapearFiador } from '@/lib/mapear-cliente'
+import { mapearVeiculo, mapearFiador, mapearParcela } from '@/lib/mapear-cliente'
+import type { BubbleParcela } from '@/data/bubble-estrutura'
 import { Dashboard } from '@/components/portal/sections/Dashboard'
 import { ProximosPagamentos } from '@/components/portal/sections/ProximosPagamentos'
 import { ParcelasPagas } from '@/components/portal/sections/ParcelasPagas'
@@ -70,6 +71,49 @@ function formatarDataCurta(iso: string) {
   const [, mes, dia] = iso.split('-')
   const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez']
   return `${parseInt(dia)} de ${meses[parseInt(mes) - 1]}`
+}
+
+const TAMANHO_PAGINA_PARCELAS = 50
+const MAX_PAGINAS_PARCELAS = 40
+
+// Bubble limita a 50 itens por chamada — busca em páginas de 50 (cursor 1,
+// 51, 101...) até vir uma página incompleta, indicando o fim da lista.
+async function buscarParcelasPaginadas(contratoIdAlvo: string, telefone: string): Promise<Cliente['parcelas']> {
+  const parcelas: Cliente['parcelas'] = []
+  let cursor = 1
+  let indice = 0
+
+  for (let pagina = 0; pagina < MAX_PAGINAS_PARCELAS; pagina++) {
+    try {
+      const res = await fetch(`${BUBBLE_BASE_URL}/portal-cliente_parcelas`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contrato: contratoIdAlvo,
+          apikey: BUBBLE_API_KEY,
+          telefone,
+          cursor,
+          limit: TAMANHO_PAGINA_PARCELAS,
+        }),
+      })
+      const data = await res.json()
+      if (data.status !== 'success') break
+
+      const bruto: BubbleParcela[] = data.response.parcelas ?? []
+      for (const p of bruto) {
+        parcelas.push(mapearParcela(p, indice))
+        indice++
+      }
+
+      if (bruto.length < TAMANHO_PAGINA_PARCELAS) break
+      cursor += TAMANHO_PAGINA_PARCELAS
+    } catch (err) {
+      console.error('[PARCELAS PAGINADAS] erro', err)
+      break
+    }
+  }
+
+  return parcelas
 }
 
 interface StatusDesbloqueio {
@@ -207,6 +251,32 @@ export function PortalPage() {
     }
     buscarDetalhesContrato()
   }, [contratoId, detalhesJaCarregados, setCliente])
+
+  // Busca todas as parcelas do contrato via endpoint paginado (o login só
+  // traz os primeiros 50). Roda de novo a cada troca de contrato.
+  useEffect(() => {
+    if (!contratoId || !cliente?.celular) return
+    const idAtual = contratoId
+    const telefoneAtual = cliente.celular
+    let cancelado = false
+
+    async function carregarParcelasCompletas() {
+      const completas = await buscarParcelasPaginadas(idAtual, telefoneAtual)
+      if (cancelado || completas.length === 0) return
+
+      const clienteAtual = useAuthStore.getState().cliente
+      if (!clienteAtual) return
+
+      setCliente({
+        ...clienteAtual,
+        parcelas: [...clienteAtual.parcelas.filter((p) => p.contrato_id !== idAtual), ...completas],
+      })
+    }
+    carregarParcelasCompletas()
+    return () => {
+      cancelado = true
+    }
+  }, [contratoId, cliente?.celular, setCliente])
 
   // Conferência do status de desbloqueio: roda de novo a cada carregamento/troca
   // de contrato (sem cache), pra refletir quando a equipe marcar como CONCLUIDO.

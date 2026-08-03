@@ -179,18 +179,17 @@ export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
 
       <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
         <div className="flex bg-[#0d1b2a] px-3 py-2.5">
-          <span className="flex-[1.2] text-[9px] font-semibold uppercase tracking-wide text-zinc-300">Vencimento</span>
-          <span className="flex-[1.2] text-[9px] font-semibold uppercase tracking-wide text-zinc-300">Valor</span>
-          <span className="flex-[0.8] text-[9px] font-semibold uppercase tracking-wide text-zinc-300">Link</span>
-          <span className="flex-[0.8] text-[9px] font-semibold uppercase tracking-wide text-zinc-300">Ações</span>
+          <span className="flex-[1.3] text-[9px] font-semibold uppercase tracking-wide text-zinc-300">Vencimento</span>
+          <span className="flex-[1.3] text-[9px] font-semibold uppercase tracking-wide text-zinc-300">Valor</span>
+          <span className="flex-1 text-[9px] font-semibold uppercase tracking-wide text-zinc-300">Link</span>
         </div>
 
         {itensPagina.map((p) => (
           <div key={p.numero} className="flex flex-col gap-1 border-b border-zinc-100 px-3 py-3">
             <div className="flex items-center">
-              <span className="flex-[1.2] text-xs text-zinc-600">{p.vencimento.split('-').reverse().join('/')}</span>
-              <span className="flex-[1.2] text-xs font-semibold text-zinc-600">{formatarMoeda(p.valor)}</span>
-              <span className="flex-[0.8]">
+              <span className="flex-[1.3] text-xs text-zinc-600">{p.vencimento.split('-').reverse().join('/')}</span>
+              <span className="flex-[1.3] text-xs font-semibold text-zinc-600">{formatarMoeda(p.valor)}</span>
+              <span className="flex flex-1 flex-wrap items-center gap-1.5">
                 {p.link_pagamento ? (
                   <button onClick={() => abrirLink(p.link_pagamento!)} className="text-xs font-semibold text-accent">
                     Acessar
@@ -206,9 +205,7 @@ export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
                 ) : (
                   <span className="text-xs text-zinc-300">—</span>
                 )}
-              </span>
-              <span className="flex-[0.8]">
-                {p.tipo === 'OS' && p.lancamento_id ? (
+                {p.tipo === 'OS' && p.lancamento_id && (
                   <button
                     onClick={() => abrirOS(p.lancamento_id!, String(p.numero), p.valor)}
                     disabled={osLoadingId === String(p.numero)}
@@ -216,12 +213,10 @@ export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
                   >
                     {osLoadingId === String(p.numero) ? '...' : 'OS'}
                   </button>
-                ) : (
-                  <span className="text-xs text-zinc-300">—</span>
                 )}
               </span>
             </div>
-            {p.descricao && <p className="truncate text-[11px] text-zinc-400">{p.descricao}</p>}
+            {p.descricao && <p className="text-[11px] text-zinc-500">{p.descricao}</p>}
           </div>
         ))}
 
