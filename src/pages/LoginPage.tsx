@@ -146,7 +146,7 @@ export function LoginPage() {
 
       if (!r1 && !r2) {
         registrarFalhaLogin()
-        showToast('error', 'Número não cadastrado.')
+        showToast('error', 'Seu número não está registrado na base de dados entre em contato com nossos operadores')
         return
       }
 
