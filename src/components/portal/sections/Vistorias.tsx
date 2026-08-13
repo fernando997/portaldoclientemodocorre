@@ -3,6 +3,7 @@ import type { Cliente } from '@/types/cliente'
 import { useAuthStore } from '@/store/auth'
 import { Paginacao } from '@/components/portal/Paginacao'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
+import { timestampParaDataLocal } from '@/lib/data'
 
 function formatarData(iso: string) {
   return iso.split('-').reverse().join('/')
@@ -52,7 +53,7 @@ export function Vistorias({ cliente }: Props) {
         const vistorias = (data.response.vistoria ?? []).map((v: any) => ({
           id: v._id,
           contrato: v.contrato,
-          data: new Date(v.data).toISOString().split('T')[0],
+          data: timestampParaDataLocal(v.data),
           placa,
           tipo: v.tipo,
           responsavel: v.vistoriador ?? '',
@@ -64,7 +65,7 @@ export function Vistorias({ cliente }: Props) {
         const fastVistorias = (data.response.fast_vistoria ?? []).map((v: any) => ({
           id: v._id,
           contrato: v.contrato,
-          data: new Date(v.data).toISOString().split('T')[0],
+          data: timestampParaDataLocal(v.data),
           placa,
           tipo: 'AUTO INSPEÇÃO',
           responsavel: '',

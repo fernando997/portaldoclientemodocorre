@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/auth'
 import { Paginacao } from '@/components/portal/Paginacao'
 import { MultaDetalhes } from '@/components/portal/sections/MultaDetalhes'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
+import { timestampParaDataLocal } from '@/lib/data'
 
 function formatarData(iso: string) {
   return iso.split('-').reverse().join('/')
@@ -58,18 +59,18 @@ export function Multas({ cliente }: Props) {
         const multas = (data.response.multas ?? []).map((m: any) => ({
           id: m._id,
           ait: m.ait ?? '',
-          data_cadastro: new Date(m.data_cadastro).toISOString().split('T')[0],
+          data_cadastro: timestampParaDataLocal(m.data_cadastro),
           valor: parseFloat(m.valor_bruto) || 0,
           link_ait: m['doc_infração'] ? `https:${m['doc_infração']}` : null,
           orgao: m.orgao ?? '',
           descricao: m.descricao ?? '',
           endereco: m.endereco ?? '',
-          data: m.data ? new Date(m.data).toISOString().split('T')[0] : '',
+          data: m.data ? timestampParaDataLocal(m.data) : '',
           hora: m.hora ?? '',
           status: m.status ?? '',
           placa: m.placa ?? '',
           pontos_cnh: m.pontos_cnh ?? '',
-          vencimento: m.vencimento ? new Date(m.vencimento).toISOString().split('T')[0] : '',
+          vencimento: m.vencimento ? timestampParaDataLocal(m.vencimento) : '',
           link_comprovante: m.comprovante_pg ? `https:${m.comprovante_pg}` : null,
           cod_barra: m.cod_barra ?? '',
           pix_copia_cola: m.pix_copia_cola ?? '',

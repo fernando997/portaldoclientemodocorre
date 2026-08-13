@@ -1,18 +1,15 @@
 import type { Cliente, Contrato } from '@/types/cliente'
 import type { BubbleResposta, BubbleParcela, BubbleVeiculo, BubbleFiador, BubbleContrato } from '@/data/bubble-estrutura'
 import { logCaminhos } from '@/lib/debug-log'
-
-export function timestampParaData(ts: number): string {
-  return new Date(ts).toISOString().split('T')[0]
-}
+import { timestampParaDataLocal, somarMesesData } from '@/lib/data'
 
 export function mapearParcela(p: BubbleParcela, index: number): Cliente['parcelas'][0] {
   return {
     numero: index + 1,
     valor: p['valor parcela'],
-    vencimento: timestampParaData(p.vencimento),
+    vencimento: timestampParaDataLocal(p.vencimento),
     status: p.status,
-    data_pagamento: p.pagamento ? timestampParaData(p.pagamento) : null,
+    data_pagamento: p.pagamento ? timestampParaDataLocal(p.pagamento) : null,
     tipo: p.tipo as Cliente['parcelas'][0]['tipo'],
     link_pagamento: p.status === 'PAGO' ? (p['comprovante link'] ?? p.url_pagamento) : p.url_pagamento,
     lancamento_id: p['lançamento'],
@@ -98,12 +95,10 @@ function mapearContratoDaLista(ct: BubbleContrato, ctx: ContextoContratoPrimario
     descricao,
     prazo_dias: prazoDias,
     prazo_meses: prazoMeses,
-    data_inicio: inicio ? timestampParaData(inicio) : '',
+    data_inicio: inicio ? timestampParaDataLocal(inicio) : '',
     data_fim: (() => {
-      if (!inicio || !prazoMeses) return ct.fim ? timestampParaData(ct.fim) : ''
-      const d = new Date(inicio)
-      d.setMonth(d.getMonth() + prazoMeses)
-      return d.toISOString().split('T')[0]
+      if (!inicio || !prazoMeses) return ct.fim ? timestampParaDataLocal(ct.fim) : ''
+      return somarMesesData(timestampParaDataLocal(inicio), prazoMeses)
     })(),
     valor_total: ct.parcela_final ?? 0,
     total_parcelas: totalParcelas,

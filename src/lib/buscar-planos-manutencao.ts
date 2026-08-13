@@ -1,5 +1,6 @@
 import type { PlanoManutencao } from '@/types/cliente'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
+import { timestampParaDataLocal } from '@/lib/data'
 
 export async function buscarPlanosManutencao(contratoId: string): Promise<PlanoManutencao[]> {
   const url = `${BUBBLE_BASE_URL}/portal-cliente_vistorias`
@@ -25,7 +26,7 @@ export async function buscarPlanosManutencao(contratoId: string): Promise<PlanoM
 
   return (data.response.plano_definido ?? []).map((p: any) => ({
     id: p._id,
-    data: p['Created Date'] ? new Date(p['Created Date']).toISOString().split('T')[0] : '',
+    data: p['Created Date'] ? timestampParaDataLocal(p['Created Date']) : '',
     descricao: p['descrição'] ?? '',
     km: p.km ?? 0,
     status: p.status ?? '',
