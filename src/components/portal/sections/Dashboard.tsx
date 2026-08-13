@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
-import { Ribbon, Car, Hourglass, Clock, ArrowRight, Wrench, CheckCircle2 } from 'lucide-react'
+import { Ribbon, Car, Hourglass, Clock, ArrowRight, Wrench, CheckCircle2, CalendarClock, ExternalLink } from 'lucide-react'
 import type { Cliente } from '@/types/cliente'
 import { useAuthStore } from '@/store/auth'
 import { buscarPlanosManutencao } from '@/lib/buscar-planos-manutencao'
+import { resolverStatusParcela } from '@/utils/parcela'
+import { abrirLink } from '@/lib/abrir-link'
 
 interface Props {
   cliente: Cliente
@@ -12,6 +14,10 @@ interface Props {
 function formatarData(iso: string) {
   const [ano, mes, dia] = iso.split('-')
   return `${dia}/${mes}/${ano}`
+}
+
+function formatarMoeda(valor: number) {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
 function calcularTempoRestante(dataFim: string): string {
@@ -73,8 +79,47 @@ export function Dashboard({ cliente, onVerPlanos }: Props) {
   const porcentagem = Math.min(Math.round(progresso * 100), 100)
   const tempoRestante = calcularTempoRestante(contrato.data_fim)
 
+  const proximasFaturas = cliente.parcelas
+    .filter((p) => p.contrato_id === contrato.id)
+    .filter((p) => {
+      const s = resolverStatusParcela(p.status, p.vencimento)
+      return s === 'atrasada' || s === 'a_vencer'
+    })
+    .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
+
   return (
     <div className="flex flex-col gap-3 overflow-y-auto p-4 pb-8">
+      <div className="flex flex-col gap-2.5 rounded-2xl border border-border bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2">
+          <CalendarClock size={18} className="text-accent" />
+          <span className="text-[13px] font-semibold uppercase tracking-wide text-text-muted">Próximas faturas</span>
+        </div>
+
+        {proximasFaturas.length > 0 ? (
+          <div className="flex flex-col gap-2.5">
+            {proximasFaturas.map((p) => (
+              <div key={p.numero} className="flex items-center gap-2.5 border-b border-surface pb-2.5 last:border-b-0 last:pb-0">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-bold text-text-body">{formatarData(p.vencimento)}</p>
+                  {p.descricao && <p className="truncate text-xs text-text-muted">{p.descricao}</p>}
+                </div>
+                <span className="shrink-0 text-sm font-semibold text-text-body">{formatarMoeda(p.valor)}</span>
+                {p.link_pagamento && (
+                  <button
+                    onClick={() => abrirLink(p.link_pagamento!)}
+                    className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-accent-light"
+                  >
+                    <ExternalLink size={13} className="text-accent" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-text-muted">Nenhuma fatura em aberto.</p>
+        )}
+      </div>
+
       <div className="flex flex-col gap-2.5 rounded-2xl border border-border bg-white p-4 shadow-sm">
         <div className="flex items-center gap-2">
           <Ribbon size={18} className="text-accent" />

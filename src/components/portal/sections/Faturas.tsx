@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle, Banknote, ExternalLink, Receipt } from 'lucide-react'
+import { CheckCircle, Banknote, ExternalLink, Receipt, Clock3 } from 'lucide-react'
 import type { Cliente } from '@/types/cliente'
 import { resolverStatusParcela } from '@/utils/parcela'
 import { useCountUp } from '@/hooks/useCountUp'
@@ -23,33 +23,78 @@ const TIPO_CONFIG: Record<string, { label: string; color: string; bg: string }> 
   'ACORDO DE PAGAMENTO': { label: 'Acordo', color: '#7c3aed', bg: '#ede9fe' },
 }
 
+type Subaba = 'pagas' | 'em-aberto'
+
 interface Props {
   cliente: Cliente
 }
 
-export function ParcelasPagas({ cliente }: Props) {
+export function Faturas({ cliente }: Props) {
   const contrato = cliente.contratos[0]
   const parcelasContratoAtual = contrato ? cliente.parcelas.filter((p) => p.contrato_id === contrato.id) : []
-  const pagas = parcelasContratoAtual.filter((p) => resolverStatusParcela(p.status, p.vencimento) === 'paga')
-  const totalPago = pagas.reduce((acc, p) => acc + p.valor, 0)
 
+  const pagas = parcelasContratoAtual.filter((p) => resolverStatusParcela(p.status, p.vencimento) === 'paga')
+  const emAberto = parcelasContratoAtual
+    .filter((p) => {
+      const s = resolverStatusParcela(p.status, p.vencimento)
+      return s === 'atrasada' || s === 'a_vencer'
+    })
+    .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
+
+  const [subaba, setSubaba] = useState<Subaba>('pagas')
   const [pagina, setPagina] = useState(1)
   const POR_PAGINA = 10
 
-  const countAnim = useCountUp(pagas.length, 700)
-  const totalAnim = useCountUp(totalPago, 900)
+  const listaAtiva = subaba === 'pagas' ? pagas : emAberto
+  const totalAtivo = listaAtiva.reduce((acc, p) => acc + p.valor, 0)
 
-  const itensPagina = [...pagas].reverse().slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
+  const countAnim = useCountUp(listaAtiva.length, 700)
+  const totalAnim = useCountUp(totalAtivo, 900)
+
+  const itensPagina =
+    subaba === 'pagas'
+      ? [...listaAtiva].reverse().slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
+      : listaAtiva.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
+
+  function trocarSubaba(nova: Subaba) {
+    setSubaba(nova)
+    setPagina(1)
+  }
 
   return (
     <div className="overflow-y-auto px-4">
-      <h2 className="mb-4 mt-2 text-xl font-bold tracking-tight text-text-body">Parcelas pagas</h2>
+      <h2 className="mb-4 mt-2 text-xl font-bold tracking-tight text-text-body">Faturas</h2>
+
+      <div className="mb-4 flex gap-1 rounded-full border border-border bg-surface p-1">
+        <button
+          onClick={() => trocarSubaba('pagas')}
+          className={`flex-1 rounded-full py-2 text-[12px] font-semibold transition-colors ${
+            subaba === 'pagas' ? 'bg-accent text-white' : 'text-text-muted'
+          }`}
+        >
+          Pagas
+        </button>
+        <button
+          onClick={() => trocarSubaba('em-aberto')}
+          className={`flex-1 rounded-full py-2 text-[12px] font-semibold transition-colors ${
+            subaba === 'em-aberto' ? 'bg-accent text-white' : 'text-text-muted'
+          }`}
+        >
+          Em aberto
+        </button>
+      </div>
 
       <div className="mb-4 flex gap-3">
         <div className="flex-1 rounded-2xl border border-l-[3px] border-border border-l-accent bg-white p-4">
           <div className="mb-2.5 flex items-center gap-1.5">
-            <CheckCircle size={18} className="text-accent" />
-            <span className="text-[11px] font-medium text-text-muted">Total pagas</span>
+            {subaba === 'pagas' ? (
+              <CheckCircle size={18} className="text-accent" />
+            ) : (
+              <Clock3 size={18} className="text-accent" />
+            )}
+            <span className="text-[11px] font-medium text-text-muted">
+              {subaba === 'pagas' ? 'Total pagas' : 'Total em aberto'}
+            </span>
           </div>
           <p className="text-2xl font-bold tracking-tight text-text-body">{Math.round(countAnim)}</p>
           <p className="mt-0.5 text-[11px] text-text-muted">parcelas</p>
@@ -60,7 +105,7 @@ export function ParcelasPagas({ cliente }: Props) {
             <span className="text-[11px] font-medium text-text-muted">Valor total</span>
           </div>
           <p className="text-lg font-bold tracking-tight text-text-body">{formatarMoeda(totalAnim)}</p>
-          <p className="mt-0.5 text-[11px] text-text-muted">pago</p>
+          <p className="mt-0.5 text-[11px] text-text-muted">{subaba === 'pagas' ? 'pago' : 'a pagar'}</p>
         </div>
       </div>
 
@@ -113,14 +158,16 @@ export function ParcelasPagas({ cliente }: Props) {
           )
         })}
 
-        {pagas.length === 0 && (
+        {listaAtiva.length === 0 && (
           <div className="flex flex-col items-center gap-2.5 py-8">
             <Receipt size={32} className="text-border" />
-            <p className="text-sm text-text-muted">Nenhuma parcela paga ainda.</p>
+            <p className="text-sm text-text-muted">
+              {subaba === 'pagas' ? 'Nenhuma parcela paga ainda.' : 'Nenhuma fatura em aberto.'}
+            </p>
           </div>
         )}
 
-        <Paginacao total={pagas.length} pagina={pagina} porPagina={POR_PAGINA} onChange={setPagina} />
+        <Paginacao total={listaAtiva.length} pagina={pagina} porPagina={POR_PAGINA} onChange={setPagina} />
       </div>
 
       <div className="h-8" />

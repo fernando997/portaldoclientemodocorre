@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import {
   Grid,
   CheckCircle2,
+  Receipt,
   FileText,
   BarChart2,
   ClipboardList,
@@ -31,7 +32,7 @@ import { mapearVeiculo, mapearFiador, mapearParcela } from '@/lib/mapear-cliente
 import type { BubbleParcela } from '@/data/bubble-estrutura'
 import { Dashboard } from '@/components/portal/sections/Dashboard'
 import { ProximosPagamentos } from '@/components/portal/sections/ProximosPagamentos'
-import { ParcelasPagas } from '@/components/portal/sections/ParcelasPagas'
+import { Faturas } from '@/components/portal/sections/Faturas'
 import { Contratos } from '@/components/portal/sections/Contratos'
 import { Multas } from '@/components/portal/sections/Multas'
 import { TabelaTarifaria } from '@/components/portal/sections/TabelaTarifaria'
@@ -44,7 +45,7 @@ import logo from '@/assets/logo.png'
 type Secao =
   | 'dashboard'
   | 'proximos-pagamentos'
-  | 'parcelas-pagas'
+  | 'faturas'
   | 'contratos'
   | 'multas'
   | 'tabela-tarifaria'
@@ -55,7 +56,7 @@ type Secao =
 
 const ABAS: { id: Secao; label: string; Icon: typeof Grid }[] = [
   { id: 'dashboard', label: 'Dashboard', Icon: Grid },
-  { id: 'parcelas-pagas', label: 'Pagas', Icon: CheckCircle2 },
+  { id: 'faturas', label: 'Faturas', Icon: Receipt },
   { id: 'contratos', label: 'Contratos', Icon: FileText },
   { id: 'multas', label: 'Multas', Icon: Gavel },
   { id: 'tabela-tarifaria', label: 'Tarifas', Icon: BarChart2 },
@@ -566,8 +567,8 @@ export function PortalPage() {
         return <Dashboard cliente={cliente} onVerPlanos={() => setSecaoAtiva('planos-manutencao')} />
       case 'proximos-pagamentos':
         return <ProximosPagamentos cliente={cliente} apenasBloqueio={filtroBloqueioAtivo} />
-      case 'parcelas-pagas':
-        return <ParcelasPagas cliente={cliente} />
+      case 'faturas':
+        return <Faturas cliente={cliente} />
       case 'contratos':
         return <Contratos cliente={cliente} />
       case 'multas':
