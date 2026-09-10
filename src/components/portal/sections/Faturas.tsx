@@ -33,13 +33,15 @@ export function Faturas({ cliente }: Props) {
   const contrato = cliente.contratos[0]
   const parcelasContratoAtual = contrato ? cliente.parcelas.filter((p) => p.contrato_id === contrato.id) : []
 
-  const pagas = parcelasContratoAtual.filter((p) => resolverStatusParcela(p.status, p.vencimento) === 'paga')
+  const pagas = parcelasContratoAtual
+    .filter((p) => resolverStatusParcela(p.status, p.vencimento) === 'paga')
+    .sort((a, b) => b.vencimento.localeCompare(a.vencimento))
   const emAberto = parcelasContratoAtual
     .filter((p) => {
       const s = resolverStatusParcela(p.status, p.vencimento)
       return s === 'atrasada' || s === 'a_vencer'
     })
-    .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
+    .sort((a, b) => b.vencimento.localeCompare(a.vencimento))
 
   const [subaba, setSubaba] = useState<Subaba>('pagas')
   const [pagina, setPagina] = useState(1)
@@ -51,10 +53,7 @@ export function Faturas({ cliente }: Props) {
   const countAnim = useCountUp(listaAtiva.length, 700)
   const totalAnim = useCountUp(totalAtivo, 900)
 
-  const itensPagina =
-    subaba === 'pagas'
-      ? [...listaAtiva].reverse().slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
-      : listaAtiva.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
+  const itensPagina = listaAtiva.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
 
   function trocarSubaba(nova: Subaba) {
     setSubaba(nova)

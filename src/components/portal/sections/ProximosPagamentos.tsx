@@ -43,6 +43,10 @@ export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
   const atrasadas = parcelasContratoAtual.filter((p) => resolverStatusParcela(p.status, p.vencimento) === 'atrasada')
   const proxima = emAberto[0] ?? null
 
+  // A lista é exibida por vencimento decrescente, mas `proxima` acima continua
+  // saindo do array crescente para seguir apontando a fatura mais próxima.
+  const emAbertoExibicao = [...emAberto].sort((a, b) => b.vencimento.localeCompare(a.vencimento))
+
   const [osAberta, setOsAberta] = useState<OSSimples | null>(null)
   const [osLoadingId, setOsLoadingId] = useState<string | null>(null)
   const [pagLoadingId, setPagLoadingId] = useState<string | null>(null)
@@ -57,7 +61,7 @@ export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
 
   const POR_PAGINA = 10
   const atrasadasCount = useCountUp(atrasadas.length)
-  const itensPagina = emAberto.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
+  const itensPagina = emAbertoExibicao.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
 
   async function abrirPagamento(id_pay: string, parcelaId: string, valor: number) {
     setPagLoadingId(parcelaId)

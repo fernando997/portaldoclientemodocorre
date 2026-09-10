@@ -85,7 +85,7 @@ export function Dashboard({ cliente, onVerPlanos }: Props) {
       const s = resolverStatusParcela(p.status, p.vencimento)
       return s === 'atrasada' || s === 'a_vencer'
     })
-    .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
+    .sort((a, b) => b.vencimento.localeCompare(a.vencimento))
 
   return (
     <div className="flex flex-col gap-3 overflow-y-auto p-4 pb-8">
