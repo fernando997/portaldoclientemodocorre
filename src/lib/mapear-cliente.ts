@@ -47,9 +47,12 @@ export function mapearFiador(f: BubbleFiador) {
 
 function ordenarESelecionar(contratos: Contrato[]): Contrato[] {
   const porRecencia = [...contratos].sort((a, b) => b.data_inicio.localeCompare(a.data_inicio))
-  const ativos = porRecencia.filter((c) => c.status === 'ativo')
-  const outros = porRecencia.filter((c) => c.status !== 'ativo' && c.status !== 'reprovado')
-  const reprovados = porRecencia.filter((c) => c.status === 'reprovado')
+  // O Bubble devolve o status em maiúsculo (ATIVO, REPROVADO), então compara sempre normalizado
+  const ativos = porRecencia.filter((c) => c.status.toUpperCase() === 'ATIVO')
+  const outros = porRecencia.filter(
+    (c) => c.status.toUpperCase() !== 'ATIVO' && c.status.toUpperCase() !== 'REPROVADO'
+  )
+  const reprovados = porRecencia.filter((c) => c.status.toUpperCase() === 'REPROVADO')
   return [...ativos, ...outros, ...reprovados]
 }
 

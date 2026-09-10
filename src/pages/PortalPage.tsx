@@ -366,7 +366,8 @@ export function PortalPage() {
 
   const isWarning = diasParaVencer !== null && diasParaVencer <= 2 && !temAtrasadas
 
-  const contratosSelecionaveis = cliente.contratos.filter((c) => c.status !== 'reprovado')
+  // Contratos reprovados não são operáveis, então ficam fora do seletor do header
+  const contratosSelecionaveis = cliente.contratos.filter((c) => c.status.toUpperCase() !== 'REPROVADO')
 
   // Parcelas que já autorizaram o bloqueio em algum momento — usadas só pra
   // confirmar que este contrato é do tipo "bloqueio por inadimplência".
