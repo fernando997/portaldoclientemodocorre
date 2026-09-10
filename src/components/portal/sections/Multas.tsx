@@ -94,7 +94,7 @@ export function Multas({ cliente }: Props) {
 
   return (
     <div className="overflow-y-auto px-4">
-      <h2 className="mb-4 mt-2 text-xl font-bold text-zinc-900">Multas</h2>
+      <h2 className="mb-4 mt-2 text-xl font-bold text-zinc-900">Multas de trânsito</h2>
 
       {carregando && (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-zinc-200 bg-white p-10">
