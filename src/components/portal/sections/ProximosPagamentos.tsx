@@ -8,6 +8,7 @@ import { useCountUp } from '@/hooks/useCountUp'
 import { Paginacao } from '@/components/portal/Paginacao'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
 import { abrirLink } from '@/lib/abrir-link'
+import { confirmarPagamentoParcela } from '@/lib/confirmar-pagamento'
 
 function formatarData(iso: string) {
   const [, mes, dia] = iso.split('-')
@@ -43,10 +44,6 @@ export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
   const atrasadas = parcelasContratoAtual.filter((p) => resolverStatusParcela(p.status, p.vencimento) === 'atrasada')
   const proxima = emAberto[0] ?? null
 
-  // A lista é exibida por vencimento decrescente, mas `proxima` acima continua
-  // saindo do array crescente para seguir apontando a fatura mais próxima.
-  const emAbertoExibicao = [...emAberto].sort((a, b) => b.vencimento.localeCompare(a.vencimento))
-
   const [osAberta, setOsAberta] = useState<OSSimples | null>(null)
   const [osLoadingId, setOsLoadingId] = useState<string | null>(null)
   const [pagLoadingId, setPagLoadingId] = useState<string | null>(null)
@@ -61,7 +58,7 @@ export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
 
   const POR_PAGINA = 10
   const atrasadasCount = useCountUp(atrasadas.length)
-  const itensPagina = emAbertoExibicao.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
+  const itensPagina = emAberto.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
 
   async function abrirPagamento(id_pay: string, parcelaId: string, valor: number) {
     setPagLoadingId(parcelaId)
@@ -195,12 +192,19 @@ export function ProximosPagamentos({ cliente, apenasBloqueio = false }: Props) {
               <span className="flex-[1.3] text-xs font-semibold text-zinc-600">{formatarMoeda(p.valor)}</span>
               <span className="flex flex-1 flex-wrap items-center gap-1.5">
                 {p.link_pagamento ? (
-                  <button onClick={() => abrirLink(p.link_pagamento!)} className="text-xs font-semibold text-accent">
+                  <button
+                    onClick={() => {
+                      if (confirmarPagamentoParcela(parcelasContratoAtual, p)) abrirLink(p.link_pagamento!)
+                    }}
+                    className="text-xs font-semibold text-accent"
+                  >
                     Acessar
                   </button>
                 ) : p.id_pay ? (
                   <button
-                    onClick={() => abrirPagamento(p.id_pay!, String(p.numero), p.valor)}
+                    onClick={() => {
+                      if (confirmarPagamentoParcela(parcelasContratoAtual, p)) abrirPagamento(p.id_pay!, String(p.numero), p.valor)
+                    }}
                     disabled={pagLoadingId === String(p.numero)}
                     className="text-xs font-semibold text-accent disabled:opacity-50"
                   >

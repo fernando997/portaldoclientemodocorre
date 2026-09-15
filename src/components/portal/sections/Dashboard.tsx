@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/auth'
 import { buscarPlanosManutencao } from '@/lib/buscar-planos-manutencao'
 import { resolverStatusParcela } from '@/utils/parcela'
 import { abrirLink } from '@/lib/abrir-link'
+import { confirmarPagamentoParcela } from '@/lib/confirmar-pagamento'
 
 interface Props {
   cliente: Cliente
@@ -85,7 +86,7 @@ export function Dashboard({ cliente, onVerPlanos }: Props) {
       const s = resolverStatusParcela(p.status, p.vencimento)
       return s === 'atrasada' || s === 'a_vencer'
     })
-    .sort((a, b) => b.vencimento.localeCompare(a.vencimento))
+    .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
 
   return (
     <div className="flex flex-col gap-3 overflow-y-auto p-4 pb-8">
@@ -106,7 +107,9 @@ export function Dashboard({ cliente, onVerPlanos }: Props) {
                 <span className="shrink-0 text-sm font-semibold text-text-body">{formatarMoeda(p.valor)}</span>
                 {p.link_pagamento && (
                   <button
-                    onClick={() => abrirLink(p.link_pagamento!)}
+                    onClick={() => {
+                      if (confirmarPagamentoParcela(proximasFaturas, p)) abrirLink(p.link_pagamento!)
+                    }}
                     className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-lg bg-accent-light"
                   >
                     <ExternalLink size={13} className="text-accent" />

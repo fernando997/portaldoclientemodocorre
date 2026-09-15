@@ -5,6 +5,7 @@ import { resolverStatusParcela } from '@/utils/parcela'
 import { useCountUp } from '@/hooks/useCountUp'
 import { Paginacao } from '@/components/portal/Paginacao'
 import { abrirLink } from '@/lib/abrir-link'
+import { confirmarPagamentoParcela } from '@/lib/confirmar-pagamento'
 
 function formatarMoeda(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -41,7 +42,7 @@ export function Faturas({ cliente }: Props) {
       const s = resolverStatusParcela(p.status, p.vencimento)
       return s === 'atrasada' || s === 'a_vencer'
     })
-    .sort((a, b) => b.vencimento.localeCompare(a.vencimento))
+    .sort((a, b) => a.vencimento.localeCompare(b.vencimento))
 
   const [subaba, setSubaba] = useState<Subaba>('pagas')
   const [pagina, setPagina] = useState(1)
@@ -142,7 +143,9 @@ export function Faturas({ cliente }: Props) {
                 <span className="flex flex-[0.7] justify-end">
                   {p.link_pagamento ? (
                     <button
-                      onClick={() => abrirLink(p.link_pagamento!)}
+                      onClick={() => {
+                        if (confirmarPagamentoParcela(parcelasContratoAtual, p)) abrirLink(p.link_pagamento!)
+                      }}
                       className="flex h-[30px] w-[30px] items-center justify-center rounded-lg bg-accent-light"
                     >
                       <ExternalLink size={13} className="text-accent" />
