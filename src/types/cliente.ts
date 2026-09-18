@@ -175,3 +175,16 @@ export interface Cliente {
   ordens_servico: OrdemServico[]
   planos_manutencao: PlanoManutencao[]
 }
+
+// Linha da tabela assistencia-sac-notificacoes do Bubble, devolvida em
+// `notificacoes` pelo workflow portal-cliente_vistorias.
+export interface Notificacao {
+  id: string
+  titulo: string
+  mensagem: string
+  tipo: string
+  setor: string
+  ref: string
+  lida: boolean
+  criada_em_ts: number
+}

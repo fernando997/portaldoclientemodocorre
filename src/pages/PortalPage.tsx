@@ -23,6 +23,7 @@ import { AlertaAtraso } from '@/components/portal/AlertaAtraso'
 import { AlertaBloqueio } from '@/components/portal/AlertaBloqueio'
 import { SolicitarDesbloqueio } from '@/components/portal/SolicitarDesbloqueio'
 import { WhatsAppButton } from '@/components/portal/WhatsAppButton'
+import { NotificacoesSino } from '@/components/portal/NotificacoesSino'
 import { abrirPopup } from '@/lib/abrir-link'
 import { obterPosicaoAtual, verificarPermissaoLocalizacao, capturarLocalizacaoAtual } from '@/services/localizacao'
 import { showToast } from '@/components/Toast'
@@ -615,76 +616,79 @@ export function PortalPage() {
         <div className="flex min-h-[88px] items-center justify-between pb-5 pt-2">
           <img src={logo} alt="Portal do Cliente" className="h-20 w-[140px] object-contain" />
 
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownVisivel((v) => !v)}
-              className="flex max-w-[180px] items-center gap-2 rounded-3xl bg-white/12 px-2.5 py-1.5"
-            >
-              {cliente.foto_url ? (
-                <img src={cliente.foto_url} alt="" className="h-7 w-7 rounded-full object-cover" />
-              ) : (
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent">
-                  <span className="text-[11px] font-bold text-white">{iniciais}</span>
+          <div className="flex items-center gap-2">
+            {contrato && <NotificacoesSino contratoId={contrato.id} />}
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownVisivel((v) => !v)}
+                className="flex max-w-[180px] items-center gap-2 rounded-3xl bg-white/12 px-2.5 py-1.5"
+              >
+                {cliente.foto_url ? (
+                  <img src={cliente.foto_url} alt="" className="h-7 w-7 rounded-full object-cover" />
+                ) : (
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent">
+                    <span className="text-[11px] font-bold text-white">{iniciais}</span>
+                  </div>
+                )}
+                <span className="flex-1 truncate text-[13px] font-semibold text-white">
+                  {cliente.nome_completo.split(' ').slice(0, 2).join(' ')}
+                </span>
+                <ChevronDown size={11} className="text-white" />
+              </button>
+  
+              {dropdownVisivel && (
+                <div className="absolute right-0 top-full z-20 mt-2 w-62 overflow-hidden rounded-2xl bg-white shadow-2xl">
+                  <div className="flex items-center gap-3 p-4">
+                    <div className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-accent">
+                      <span className="text-[15px] font-bold text-white">{iniciais}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-bold tracking-tight text-text-body">
+                        {cliente.nome_completo}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-text-muted">{cliente.email || cliente.celular}</p>
+                    </div>
+                  </div>
+                  <div className="h-px bg-surface" />
+                  <button
+                    onClick={() => {
+                      setDropdownVisivel(false)
+                      setSecaoAtiva('meus-dados')
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left"
+                  >
+                    <User size={17} className="text-accent" />
+                    <span className="text-sm font-semibold text-text-body">Meus dados</span>
+                  </button>
+                  <div className="h-px bg-surface" />
+                  <button
+                    onClick={() => {
+                      setDropdownVisivel(false)
+                      if (contrato?.link_documento_moto) {
+                        abrirPopup(contrato.link_documento_moto)
+                      } else {
+                        showToast('error', 'Documento ainda não disponível.')
+                      }
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left"
+                  >
+                    <FileDown size={17} className="text-accent" />
+                    <span className="text-sm font-semibold text-text-body">Documento CRLV</span>
+                  </button>
+                  <div className="h-px bg-surface" />
+                  <button
+                    onClick={() => {
+                      setDropdownVisivel(false)
+                      if (confirm('Deseja encerrar a sessão?')) handleLogout()
+                    }}
+                    className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left"
+                  >
+                    <LogOut size={17} className="text-danger" />
+                    <span className="text-sm font-semibold text-danger">Sair da conta</span>
+                  </button>
                 </div>
               )}
-              <span className="flex-1 truncate text-[13px] font-semibold text-white">
-                {cliente.nome_completo.split(' ').slice(0, 2).join(' ')}
-              </span>
-              <ChevronDown size={11} className="text-white" />
-            </button>
-
-            {dropdownVisivel && (
-              <div className="absolute right-0 top-full z-20 mt-2 w-62 overflow-hidden rounded-2xl bg-white shadow-2xl">
-                <div className="flex items-center gap-3 p-4">
-                  <div className="flex h-[42px] w-[42px] items-center justify-center rounded-full bg-accent">
-                    <span className="text-[15px] font-bold text-white">{iniciais}</span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold tracking-tight text-text-body">
-                      {cliente.nome_completo}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-text-muted">{cliente.email || cliente.celular}</p>
-                  </div>
-                </div>
-                <div className="h-px bg-surface" />
-                <button
-                  onClick={() => {
-                    setDropdownVisivel(false)
-                    setSecaoAtiva('meus-dados')
-                  }}
-                  className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left"
-                >
-                  <User size={17} className="text-accent" />
-                  <span className="text-sm font-semibold text-text-body">Meus dados</span>
-                </button>
-                <div className="h-px bg-surface" />
-                <button
-                  onClick={() => {
-                    setDropdownVisivel(false)
-                    if (contrato?.link_documento_moto) {
-                      abrirPopup(contrato.link_documento_moto)
-                    } else {
-                      showToast('error', 'Documento ainda não disponível.')
-                    }
-                  }}
-                  className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left"
-                >
-                  <FileDown size={17} className="text-accent" />
-                  <span className="text-sm font-semibold text-text-body">Documento CRLV</span>
-                </button>
-                <div className="h-px bg-surface" />
-                <button
-                  onClick={() => {
-                    setDropdownVisivel(false)
-                    if (confirm('Deseja encerrar a sessão?')) handleLogout()
-                  }}
-                  className="flex w-full items-center gap-2.5 px-4 py-3.5 text-left"
-                >
-                  <LogOut size={17} className="text-danger" />
-                  <span className="text-sm font-semibold text-danger">Sair da conta</span>
-                </button>
-              </div>
-            )}
+            </div>
           </div>
         </div>
 

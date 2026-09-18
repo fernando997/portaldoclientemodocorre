@@ -1,0 +1,9 @@
+{
+  "name": "Portal do Cliente Modo Corre",
+  "short_name": "Modo Corre",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a2c2c",
+  "theme_color": "#0a2c2c",
+  "icons": [{ "src": "/favicon.png", "sizes": "1024x1024", "type": "image/png", "purpose": "any" }]
+}
