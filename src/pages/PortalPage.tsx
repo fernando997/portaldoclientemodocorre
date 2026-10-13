@@ -26,6 +26,7 @@ import { SolicitarDesbloqueio } from '@/components/portal/SolicitarDesbloqueio'
 import { WhatsAppButton } from '@/components/portal/WhatsAppButton'
 import { NotificacoesSino } from '@/components/portal/NotificacoesSino'
 import { abrirPopup } from '@/lib/abrir-link'
+import { nomeExibicao, formatarDocumento, rotuloDocumento } from '@/lib/nome-cliente'
 import { obterPosicaoAtual, verificarPermissaoLocalizacao, capturarLocalizacaoAtual } from '@/services/localizacao'
 import { showToast } from '@/components/Toast'
 import { resolverStatusParcela } from '@/utils/parcela'
@@ -551,7 +552,10 @@ export function PortalPage() {
     }
   }
 
-  const iniciais = cliente.nome_completo
+  // PJ vem com a raiz do CNPJ colada no nome; na tela usamos só o nome
+  const nomeCliente = nomeExibicao(cliente.nome_completo)
+
+  const iniciais = nomeCliente
     .split(' ')
     .slice(0, 2)
     .map((n) => n[0])
@@ -632,7 +636,7 @@ export function PortalPage() {
                   </div>
                 )}
                 <span className="flex-1 truncate text-[13px] font-semibold text-white">
-                  {cliente.nome_completo.split(' ').slice(0, 2).join(' ')}
+                  {nomeCliente.split(' ').slice(0, 2).join(' ')}
                 </span>
                 <ChevronDown size={11} className="text-white" />
               </button>
@@ -644,9 +648,12 @@ export function PortalPage() {
                       <span className="text-[15px] font-bold text-white">{iniciais}</span>
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-bold tracking-tight text-text-body">
-                        {cliente.nome_completo}
-                      </p>
+                      <p className="truncate text-sm font-bold tracking-tight text-text-body">{nomeCliente}</p>
+                      {cliente.cpf && (
+                        <p className="mt-0.5 truncate text-xs font-medium text-text-body">
+                          {rotuloDocumento(cliente.cpf)} {formatarDocumento(cliente.cpf)}
+                        </p>
+                      )}
                       <p className="mt-0.5 truncate text-xs text-text-muted">{cliente.email || cliente.celular}</p>
                     </div>
                   </div>

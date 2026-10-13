@@ -1,4 +1,5 @@
 import type { Cliente } from '@/types/cliente'
+import { nomeExibicao, formatarDocumento, rotuloDocumento } from '@/lib/nome-cliente'
 
 function formatarData(iso: string) {
   return iso.split('-').reverse().join('/')
@@ -20,7 +21,10 @@ interface Props {
 export function MeusDados({ cliente }: Props) {
   const contrato = cliente.contratos[0]
 
-  const iniciais = cliente.nome_completo
+  // PJ vem com a raiz do CNPJ colada no nome; na tela usamos só o nome
+  const nomeCliente = nomeExibicao(cliente.nome_completo)
+
+  const iniciais = nomeCliente
     .split(' ')
     .slice(0, 2)
     .map((n) => n[0])
@@ -49,12 +53,12 @@ export function MeusDados({ cliente }: Props) {
               <span className="text-base font-bold text-white">{iniciais}</span>
             </div>
           )}
-          <p className="flex-1 text-base font-bold text-zinc-900">{cliente.nome_completo}</p>
+          <p className="flex-1 text-base font-bold text-zinc-900">{nomeCliente}</p>
         </div>
 
         <div className="flex flex-wrap gap-4">
           <Campo label="Contrato" valor={String(contrato.numero)} />
-          <Campo label="CPF" valor={cliente.cpf} />
+          <Campo label={rotuloDocumento(cliente.cpf)} valor={formatarDocumento(cliente.cpf)} />
           <Campo label="Placa" valor={contrato.veiculo.placa} />
           <Campo label="Validade da CNH" valor={formatarData(contrato.validade_cnh)} />
           <Campo label="Telefone" valor={cliente.celular} />
