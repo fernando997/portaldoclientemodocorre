@@ -16,6 +16,7 @@ import {
   Gavel,
   FileDown,
   Wrench,
+  Bike,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import type { Cliente } from '@/types/cliente'
@@ -694,37 +695,71 @@ export function PortalPage() {
 
         <div className="flex flex-col gap-1.5">
           {contrato && (
-            <div className="relative w-fit" ref={contratoDropdownRef}>
+            <div className="relative mb-1.5" ref={contratoDropdownRef}>
               {contratosSelecionaveis.length > 1 ? (
+                // Com mais de um contrato o seletor vira um campo explícito, para
+                // o cliente perceber que precisa escolher de qual contrato quer ver
                 <button
                   onClick={() => setContratoDropdownVisivel((v) => !v)}
-                  className="mb-1.5 flex items-center gap-1 text-xs font-medium tracking-wide text-text-faint"
+                  className="flex w-full items-center gap-3 rounded-2xl border border-white/25 bg-white/12 px-3.5 py-2.5 text-left"
                 >
-                  <span>
-                    {contrato.veiculo.placa} · Contrato #{contrato.numero}
+                  <Bike size={18} className="shrink-0 text-white" />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-text-faint">
+                        Contrato selecionado
+                      </span>
+                      <span className="rounded-full bg-accent px-1.5 py-px text-[9px] font-bold text-white">
+                        {contratosSelecionaveis.length}
+                      </span>
+                    </span>
+                    <span className="mt-0.5 block truncate text-[13px] font-bold text-white">
+                      {contrato.veiculo.placa} · Contrato #{contrato.numero}
+                    </span>
                   </span>
-                  <ChevronDown size={11} />
+                  <span className="flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2 py-1">
+                    <span className="text-[10px] font-bold text-white">Trocar</span>
+                    <ChevronDown
+                      size={12}
+                      className={`text-white transition-transform ${contratoDropdownVisivel ? 'rotate-180' : ''}`}
+                    />
+                  </span>
                 </button>
               ) : (
-                <p className="mb-1.5 text-xs font-medium tracking-wide text-text-faint">
+                <p className="text-xs font-medium tracking-wide text-text-faint">
                   {contrato.veiculo.placa} · Contrato #{contrato.numero}
                 </p>
               )}
 
               {contratoDropdownVisivel && (
-                <div className="absolute left-0 top-full z-20 mt-1 w-64 overflow-hidden rounded-2xl bg-white shadow-2xl">
-                  {contratosSelecionaveis.map((c) => (
-                    <button
-                      key={c.id}
-                      onClick={() => selecionarContrato(c.id)}
-                      className="flex w-full items-center justify-between gap-2 border-b border-surface px-4 py-3 text-left last:border-0"
-                    >
-                      <span className="text-sm font-semibold text-text-body">
-                        {c.veiculo.placa} · Contrato #{c.numero}
-                      </span>
-                      {c.id === contrato.id && <CheckCircle2 size={14} className="text-accent" />}
-                    </button>
-                  ))}
+                <div className="absolute left-0 right-0 top-full z-20 mt-1.5 overflow-hidden rounded-2xl bg-white shadow-2xl">
+                  <p className="border-b border-surface px-4 py-2.5 text-[10px] font-semibold uppercase tracking-wide text-text-muted">
+                    Escolha o contrato
+                  </p>
+                  <div className="max-h-[50vh] overflow-y-auto">
+                    {contratosSelecionaveis.map((c) => {
+                      const selecionado = c.id === contrato.id
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => selecionarContrato(c.id)}
+                          className={`flex w-full items-center justify-between gap-2 border-b border-surface px-4 py-3 text-left last:border-0 ${
+                            selecionado ? 'bg-accent-light' : ''
+                          }`}
+                        >
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold text-text-body">
+                              {c.veiculo.placa} · Contrato #{c.numero}
+                            </span>
+                            {c.descricao && (
+                              <span className="mt-0.5 block truncate text-[11px] text-text-muted">{c.descricao}</span>
+                            )}
+                          </span>
+                          {selecionado && <CheckCircle2 size={16} className="shrink-0 text-accent" />}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
               )}
             </div>
