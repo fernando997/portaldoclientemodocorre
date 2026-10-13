@@ -52,7 +52,14 @@ async function tentarEnvio(telefone: string, codigo: string): Promise<boolean> {
     } catch {
       return false
     }
-    return res.ok && data.status === 'success'
+    if (!res.ok || data.status !== 'success') return false
+
+    // O workflow responde sucesso mesmo quando o número não está cadastrado —
+    // nesse caso ele só não cria o código nem dispara o WhatsApp. O campo
+    // `encontrado` existe para diferenciar os dois casos; enquanto a produção
+    // não tiver a versão nova publicada, ele vem ausente e mantemos o
+    // comportamento antigo de considerar enviado.
+    return data.response?.encontrado !== false
   } catch (err) {
     console.error('[LOGIN] ERRO DE REDE', err)
     return false
