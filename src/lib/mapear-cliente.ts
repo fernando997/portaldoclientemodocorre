@@ -20,20 +20,27 @@ export function mapearParcela(p: BubbleParcela, index: number): Cliente['parcela
   }
 }
 
+// Quando a busca do Bubble não acha nada, o campo vem como objeto vazio em vez
+// de ausente — e `{}` é truthy. Sem esta checagem o mapeamento quebra.
+export function temConteudo(obj: unknown): boolean {
+  return !!obj && typeof obj === 'object' && Object.keys(obj as object).length > 0
+}
+
 export function mapearVeiculo(v: BubbleVeiculo) {
-  const partes = v.modelo.split('/')
+  const modeloBruto = v.modelo ?? ''
+  const partes = modeloBruto.split('/')
   const marca = partes[0]?.trim() ?? ''
-  const modelo = partes[1]?.trim() ?? v.modelo
+  const modelo = partes[1]?.trim() ?? modeloBruto
   const ano = parseInt(v['ano-modelo']?.split('/')[0] ?? '0')
 
   return {
-    placa: v.placa,
+    placa: v.placa ?? '',
     modelo,
     marca,
     ano,
-    cor: v.cor,
-    chassi: v.chassi,
-    km: v.km,
+    cor: v.cor ?? '',
+    chassi: v.chassi ?? '',
+    km: v.km ?? 0,
   }
 }
 
@@ -123,9 +130,9 @@ function mapearContratoDaLista(ct: BubbleContrato, ctx: ContextoContratoPrimario
 export function mapearCliente(bubble: BubbleResposta['response']): Cliente {
   logCaminhos(bubble, 'response')
   const c = bubble.cliente
-  const ct = Object.keys(bubble.contrato).length > 0 ? (bubble.contrato as BubbleContrato) : null
-  const veiculo = bubble.veiculo ? mapearVeiculo(bubble.veiculo) : null
-  const fiador = bubble.fiador ? mapearFiador(bubble.fiador) : null
+  const ct = temConteudo(bubble.contrato) ? (bubble.contrato as BubbleContrato) : null
+  const veiculo = temConteudo(bubble.veiculo) ? mapearVeiculo(bubble.veiculo!) : null
+  const fiador = temConteudo(bubble.fiador) ? mapearFiador(bubble.fiador!) : null
   const parcelas = (bubble.parcelas ?? []).map((p, i) => mapearParcela(p, i))
 
   // Conta apenas parcelas de tipo CONTRATO para o resumo do plano
