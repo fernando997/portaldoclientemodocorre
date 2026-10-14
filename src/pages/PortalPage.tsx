@@ -17,6 +17,7 @@ import {
   FileDown,
   Wrench,
   Bike,
+  Headset,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
 import type { Cliente } from '@/types/cliente'
@@ -41,6 +42,7 @@ import { Multas } from '@/components/portal/sections/Multas'
 import { TabelaTarifaria } from '@/components/portal/sections/TabelaTarifaria'
 import { Vistorias } from '@/components/portal/sections/Vistorias'
 import { OrdensServico } from '@/components/portal/sections/OrdensServico'
+import { Tickets } from '@/components/portal/sections/Tickets'
 import { PlanosManutencao } from '@/components/portal/sections/PlanosManutencao'
 import { MeusDados } from '@/components/portal/sections/MeusDados'
 import logo from '@/assets/logo.png'
@@ -54,6 +56,7 @@ type Secao =
   | 'tabela-tarifaria'
   | 'vistorias'
   | 'ordens-servico'
+  | 'tickets'
   | 'planos-manutencao'
   | 'meus-dados'
 
@@ -65,6 +68,7 @@ const ABAS: { id: Secao; label: string; Icon: typeof Grid }[] = [
   { id: 'tabela-tarifaria', label: 'Tarifas', Icon: BarChart2 },
   { id: 'vistorias', label: 'Vistorias', Icon: ClipboardList },
   { id: 'ordens-servico', label: 'Ordens de serviço', Icon: Wrench },
+  { id: 'tickets', label: 'Tickets', Icon: Headset },
 ]
 
 function formatarMoeda(valor: number) {
@@ -201,6 +205,7 @@ export function PortalPage() {
       multas: [],
       ordens_servico: [],
       planos_manutencao: [],
+      tickets: [],
     })
     setContratoDropdownVisivel(false)
   }
@@ -586,6 +591,8 @@ export function PortalPage() {
         return <Vistorias cliente={cliente} />
       case 'ordens-servico':
         return <OrdensServico cliente={cliente} />
+      case 'tickets':
+        return <Tickets cliente={cliente} />
       case 'planos-manutencao':
         return <PlanosManutencao cliente={cliente} onVoltar={() => setSecaoAtiva('dashboard')} />
       case 'meus-dados':

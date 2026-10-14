@@ -192,5 +192,6 @@ export function mapearCliente(bubble: BubbleResposta['response']): Cliente {
     multas: [],
     ordens_servico: [],
     planos_manutencao: [],
+    tickets: [],
   }
 }

@@ -174,6 +174,7 @@ export interface Cliente {
   multas: Multa[]
   ordens_servico: OrdemServico[]
   planos_manutencao: PlanoManutencao[]
+  tickets: Ticket[]
 }
 
 // Linha da tabela assistencia-sac-notificacoes do Bubble, devolvida em
@@ -187,4 +188,19 @@ export interface Notificacao {
   ref: string
   lida: boolean
   criada_em_ts: number
+}
+
+// Atendimento do SAC (tabela assistencia-sac-atendimento do Bubble), devolvido
+// pelo workflow portal-cliente_tickets. É o que o cliente acompanha na aba Tickets.
+export interface Ticket {
+  id: string
+  protocolo: string
+  assunto: string
+  canal: string
+  status: string
+  desfecho: string
+  retorno_obs: string
+  abertura_ts: number
+  encerramento_ts: number | null
+  retorno_em_ts: number | null
 }
