@@ -1,20 +1,33 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft } from 'lucide-react'
-import type { Cliente } from '@/types/cliente'
-import { useAuthStore } from '@/store/auth'
+import type { Cliente, ItemListagemPlano } from '@/types/cliente'
 import { Paginacao } from '@/components/portal/Paginacao'
-import { buscarPlanosManutencao } from '@/lib/buscar-planos-manutencao'
+import { buscarListagemPlanos } from '@/lib/buscar-planos-manutencao'
+import {
+  filtrarListagem,
+  situacaoDoPlano,
+  type FiltroListagem,
+  type TipoSituacao,
+} from '@/lib/regra-planos-manutencao'
 
-function formatarData(iso: string) {
-  if (!iso) return '—'
-  return iso.split('-').reverse().join('/')
+const POR_PAGINA = 10
+
+const FILTROS: { id: FiltroListagem; label: string; titulo: string }[] = [
+  { id: 'TODOS', label: 'Todos', titulo: 'Todos os planos' },
+  { id: 'NAO REALIZADO', label: 'Não realizados', titulo: 'Planos não realizados' },
+  { id: 'REALIZADO', label: 'Realizados', titulo: 'Planos realizados' },
+]
+
+const corSituacao: Record<TipoSituacao, { color: string; bg: string }> = {
+  concluida: { color: '#15803d', bg: '#dcfce7' },
+  'na-hora': { color: '#92400e', bg: '#fef3c7' },
+  os: { color: '#1d4ed8', bg: '#dbeafe' },
+  vencida: { color: '#dc2626', bg: '#fee2e2' },
+  faltam: { color: '#71717a', bg: '#f4f4f5' },
 }
 
-const statusConfig: Record<string, { color: string; bg: string }> = {
-  REALIZADO: { color: '#15803d', bg: '#dcfce7' },
-  PENDENTE: { color: '#92400e', bg: '#fef3c7' },
-  AGENDADO: { color: '#92400e', bg: '#fef3c7' },
-  CANCELADO: { color: '#dc2626', bg: '#fee2e2' },
+function formatarKm(km: number) {
+  return km.toLocaleString('pt-BR')
 }
 
 interface Props {
@@ -23,35 +36,53 @@ interface Props {
 }
 
 export function PlanosManutencao({ cliente, onVoltar }: Props) {
-  const setCliente = useAuthStore((s) => s.setCliente)
-  const [pagina, setPagina] = useState(1)
-  const jaTemDados = (cliente.planos_manutencao ?? []).length > 0
-  const [carregando, setCarregando] = useState(!jaTemDados)
+  const contrato = cliente.contratos[0]
+  const contratoId = contrato?.id
+  const [listagem, setListagem] = useState<{ kmMoto: number; itens: ItemListagemPlano[] } | null>(null)
+  const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
-  const POR_PAGINA = 10
-  const ordenados = [...(cliente.planos_manutencao ?? [])].sort((a, b) => a.km - b.km)
-  const itensPagina = ordenados.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
+  const [filtro, setFiltro] = useState<FiltroListagem>('TODOS')
+  // null = página da próxima manutenção (o cliente não precisa passar pelas realizadas)
+  const [paginaEscolhida, setPaginaEscolhida] = useState<number | null>(null)
 
+  // A listagem é sempre da moto do contrato selecionado: troca de contrato busca de novo
   useEffect(() => {
-    if (jaTemDados) return
-
-    async function buscar() {
-      try {
-        setCarregando(true)
-        setErro(null)
-        const contratoId = cliente.contratos[0]?.id
-        const planos = await buscarPlanosManutencao(contratoId ?? '')
-        setCliente({ ...cliente, planos_manutencao: planos })
-      } catch (err: any) {
-        console.error('[PLANOS DE MANUTENÇÃO] ERRO', err)
-        setErro(err.message ?? 'Erro ao carregar planos de manutenção.')
-      } finally {
-        setCarregando(false)
-      }
+    if (!contratoId) {
+      setCarregando(false)
+      return
     }
-    buscar()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    let cancelado = false
+    setCarregando(true)
+    setErro(null)
+    setListagem(null)
+    setPaginaEscolhida(null)
+    buscarListagemPlanos(contratoId)
+      .then((r) => {
+        if (!cancelado) setListagem(r)
+      })
+      .catch((err: any) => {
+        console.error('[PLANOS DE MANUTENÇÃO] ERRO', err)
+        if (!cancelado) setErro(err.message ?? 'Erro ao carregar planos de manutenção.')
+      })
+      .finally(() => {
+        if (!cancelado) setCarregando(false)
+      })
+    return () => {
+      cancelado = true
+    }
+  }, [contratoId])
+
+  const kmMoto = listagem?.kmMoto ?? 0
+  const { itens, pendentes, proxima } = filtrarListagem(listagem?.itens ?? [], kmMoto, filtro)
+  const indiceProxima = proxima ? itens.indexOf(proxima) : -1
+  const pagina = paginaEscolhida ?? (indiceProxima >= 0 ? Math.floor(indiceProxima / POR_PAGINA) + 1 : 1)
+  const itensPagina = itens.slice((pagina - 1) * POR_PAGINA, pagina * POR_PAGINA)
+  const tituloLista = FILTROS.find((f) => f.id === filtro)?.titulo ?? ''
+
+  function trocarFiltro(novo: FiltroListagem) {
+    setFiltro(novo)
+    setPaginaEscolhida(null)
+  }
 
   return (
     <div className="overflow-y-auto px-4">
@@ -76,40 +107,102 @@ export function PlanosManutencao({ cliente, onVoltar }: Props) {
       )}
 
       {!carregando && !erro && (
-        <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-          {itensPagina.map((p, i) => {
-            const cfg = statusConfig[p.status.toUpperCase()] ?? { color: '#71717a', bg: '#f4f4f5' }
-            const isLast = i === itensPagina.length - 1
-            return (
-              <div key={p.id} className={`p-4 ${isLast ? '' : 'border-b border-zinc-100'}`}>
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="text-sm font-bold text-zinc-900">{p.plano_nome || 'Plano de manutenção'}</span>
-                  {p.status && (
-                    <span
-                      className="rounded-full px-2 py-0.5 text-[10px] font-bold"
-                      style={{ backgroundColor: cfg.bg, color: cfg.color }}
-                    >
-                      {p.status}
-                    </span>
-                  )}
-                </div>
-                {p.descricao && <p className="mb-1.5 text-xs text-zinc-600">{p.descricao}</p>}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
-                  <span>{formatarData(p.data)}</span>
-                  {p.km > 0 && <span>{p.km.toLocaleString('pt-BR')} km</span>}
-                </div>
+        <>
+          <div className="mb-4 rounded-2xl border border-zinc-200 bg-white p-4">
+            {contrato && (
+              <div className="mb-3 flex items-center gap-3">
+                <span className="rounded-md border-2 border-zinc-900 bg-zinc-50 px-2 py-0.5 text-[15px] font-bold tracking-widest text-zinc-900">
+                  {contrato.veiculo.placa}
+                </span>
+                <span className="min-w-0 truncate text-sm font-semibold text-zinc-700">
+                  {[contrato.veiculo.marca, contrato.veiculo.modelo].filter(Boolean).join(' ')}
+                </span>
               </div>
-            )
-          })}
-
-          {ordenados.length === 0 && (
-            <div className="p-6 text-center">
-              <p className="text-[13px] text-zinc-400">Nenhum plano de manutenção encontrado.</p>
+            )}
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <p className="text-[11px] text-zinc-500">Km atual</p>
+                <p className="text-lg font-bold tabular-nums text-zinc-900">{formatarKm(kmMoto)}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-zinc-500">Pendentes</p>
+                <p className="text-lg font-bold tabular-nums text-zinc-900">{pendentes}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-zinc-500">Próxima (km)</p>
+                <p className="text-lg font-bold tabular-nums text-zinc-900">{proxima ? formatarKm(proxima.km) : '—'}</p>
+              </div>
             </div>
-          )}
+          </div>
 
-          <Paginacao total={ordenados.length} pagina={pagina} porPagina={POR_PAGINA} onChange={setPagina} />
-        </div>
+          <div className="mb-3 flex gap-1 rounded-xl bg-zinc-100 p-1">
+            {FILTROS.map((f) => (
+              <button
+                key={f.id}
+                onClick={() => trocarFiltro(f.id)}
+                className={`flex-1 rounded-lg py-2 text-xs font-semibold ${
+                  filtro === f.id ? 'bg-accent text-white' : 'text-zinc-500'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mb-2 flex items-baseline justify-between px-1">
+            <span className="text-sm font-bold text-zinc-900">{tituloLista}</span>
+            {itens.length > 0 && (
+              <span className="text-xs text-zinc-400">
+                {itens.length} {itens.length === 1 ? 'plano' : 'planos'}
+              </span>
+            )}
+          </div>
+
+          <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+            {itensPagina.map((p, i) => {
+              const situacao = situacaoDoPlano(p, kmMoto)
+              const cor = corSituacao[situacao.tipo]
+              const ehProxima = p === proxima
+              const isLast = i === itensPagina.length - 1
+              return (
+                <div
+                  key={p.id}
+                  className={`flex gap-3 p-4 ${isLast ? '' : 'border-b border-zinc-100'} ${ehProxima ? 'bg-accent-light' : ''}`}
+                >
+                  <div className="w-[60px] shrink-0 text-right">
+                    <p className="text-base font-bold leading-tight tabular-nums text-zinc-900">{formatarKm(p.km)}</p>
+                    <p className="text-[10px] font-semibold text-zinc-400">KM</p>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-zinc-900">{p.nome || 'Plano de manutenção'}</p>
+                    <p className="mb-1.5 text-xs text-zinc-500">Prevista para {formatarKm(p.km)} km</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {ehProxima && (
+                        <span className="rounded-full bg-accent px-2 py-0.5 text-[10px] font-bold text-white">
+                          Próxima manutenção
+                        </span>
+                      )}
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[10px] font-bold"
+                        style={{ backgroundColor: cor.bg, color: cor.color }}
+                      >
+                        {situacao.texto}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+
+            {itens.length === 0 && (
+              <div className="p-6 text-center">
+                <p className="text-[13px] text-zinc-400">Nenhum plano encontrado para esta opção.</p>
+              </div>
+            )}
+
+            <Paginacao total={itens.length} pagina={pagina} porPagina={POR_PAGINA} onChange={setPaginaEscolhida} />
+          </div>
+        </>
       )}
 
       <div className="h-8" />

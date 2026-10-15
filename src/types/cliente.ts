@@ -152,6 +152,20 @@ export interface PlanoManutencao {
   plano_nome: string
 }
 
+// Item da listagem "Planos de manutenção", montada com a mesma regra da tela
+// operacional-consultar_planos-v2 do Bubble. `calculado` = previsto pela regra
+// do plano (não existe registro em Plano_definidos).
+export interface ItemListagemPlano {
+  id: string
+  km: number
+  nome: string
+  descricao: string
+  status: 'REALIZADO' | 'NAO REALIZADO'
+  os_id: string | null
+  numero_os: number | null
+  calculado: boolean
+}
+
 export interface Cliente {
   id: string
   foto_url: string | null

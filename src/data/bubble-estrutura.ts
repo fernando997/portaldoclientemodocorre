@@ -174,6 +174,33 @@ export interface BubbleMulta {
   'Created By': string
 }
 
+// Retornada dentro de response.plano_manutencao (catálogo inteiro) no endpoint portal-cliente_vistorias
+export interface BubblePlanoManutencao {
+  _id: string
+  'descrição'?: string
+  'serviço'?: string
+  'km primeiro servico'?: number
+  recorrencia?: number
+  'maximo de km'?: number
+  versao?: string
+  status?: string
+  grupos?: string[]
+  unidades?: string[]
+  plano_pai?: string
+  plano_consolidado?: string
+  substituido_por?: string
+}
+
+// Retornada dentro de response.plano_definido (planos da moto, sem os SUBSTITUIDA) no endpoint portal-cliente_vistorias
+export interface BubblePlanoDefinido {
+  _id: string
+  'descrição'?: string
+  km?: number
+  status?: string
+  Plano?: string
+  os?: string
+}
+
 export interface BubbleFiador {
   _id: string
   nome: string
