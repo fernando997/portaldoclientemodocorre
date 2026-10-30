@@ -63,23 +63,32 @@ export function obterPosicaoAtual(): Promise<GeolocationPosition> {
   })
 }
 
+// Grava no histórico uma posição já obtida, sem reler o GPS. Use esta quando
+// quem chama já tem o GeolocationPosition em mãos.
+export async function registrarLocalizacao(
+  contratoId: string,
+  pos: GeolocationPosition,
+  origem = 'portal'
+): Promise<boolean> {
+  const ok = await supabaseInsert('localizacoes', {
+    contrato_id: contratoId,
+    device_id: obterDeviceId(),
+    latitude: pos.coords.latitude,
+    longitude: pos.coords.longitude,
+    precisao: pos.coords.accuracy,
+    capturado_em: new Date(pos.timestamp).toISOString(),
+  })
+  console.log('[LOC] Snapshot ' + origem, ok ? 'salvo' : 'FALHOU')
+  return ok
+}
+
 // Captura pontual de localização (foreground, uma vez, no login) — sem
 // rastreamento em background, que permanece exclusivo do app nativo.
 export function capturarLocalizacaoAtual(contratoId: string): void {
   if (!('geolocation' in navigator)) return
 
   navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const ok = await supabaseInsert('localizacoes', {
-        contrato_id: contratoId,
-        device_id: obterDeviceId(),
-        latitude: pos.coords.latitude,
-        longitude: pos.coords.longitude,
-        precisao: pos.coords.accuracy,
-        capturado_em: new Date(pos.timestamp).toISOString(),
-      })
-      console.log('[LOC] Snapshot de login', ok ? 'salvo' : 'FALHOU')
-    },
+    (pos) => void registrarLocalizacao(contratoId, pos, 'de login'),
     (err) => console.warn('[LOC] Permissão negada ou erro', err),
     { enableHighAccuracy: true, timeout: 10_000 }
   )

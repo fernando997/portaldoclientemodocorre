@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Bell, BellOff, BellRing, Smartphone } from 'lucide-react'
 import type { Notificacao } from '@/types/cliente'
 import { buscarNotificacoes } from '@/lib/buscar-notificacoes'
+import { mostrarNotificacaoNativa } from '@/lib/notificacao-nativa'
 
 const INTERVALO_MS = 3 * 60 * 1000
 const CHAVE_VISTAS = '@notificacoes_vistas'
@@ -61,25 +62,6 @@ function lerEstadoPermissao(): EstadoPermissao {
   if (Notification.permission === 'granted') return 'ativada'
   if (Notification.permission === 'denied') return 'bloqueada'
   return 'pedir'
-}
-
-async function mostrarNotificacaoNativa(titulo: string, corpo: string, tag: string) {
-  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return
-  const opcoes = { body: corpo, icon: '/favicon.png', badge: '/favicon.png', tag }
-  try {
-    if ('serviceWorker' in navigator) {
-      const reg = await navigator.serviceWorker.ready
-      await reg.showNotification(titulo, opcoes)
-      return
-    }
-  } catch {
-    // cai no fallback abaixo
-  }
-  try {
-    new Notification(titulo, opcoes)
-  } catch {
-    // navegador sem suporte a Notification() da página: ignora
-  }
 }
 
 function notificarNativo(n: Notificacao) {

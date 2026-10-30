@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, MapPin, Clock3 } from 'lucide-react'
 import type { Cliente, ItemListagemPlano } from '@/types/cliente'
 import { Paginacao } from '@/components/portal/Paginacao'
+import { formatarMetros, type FilaOleo } from '@/hooks/useFilaOleo'
 import { buscarListagemPlanos } from '@/lib/buscar-planos-manutencao'
 import {
   filtrarListagem,
@@ -33,11 +34,26 @@ function formatarKm(km: number) {
 interface Props {
   cliente: Cliente
   onVoltar: () => void
+  fila: FilaOleo
+  onVerFila: () => void
 }
 
-export function PlanosManutencao({ cliente, onVoltar }: Props) {
+export function PlanosManutencao({ cliente, onVoltar, fila, onVerFila }: Props) {
   const contrato = cliente.contratos[0]
   const contratoId = contrato?.id
+
+  // A fila só é oferecida na linha da OS que o endpoint da fila apontou como
+  // elegível (troca de óleo, OS aberta, plano não substituído nem realizado).
+  const naFila = !!fila.status?.entrada
+  const osElegivelId = fila.status?.osElegivel?.id ?? null
+  const ehOsDaFila = (item: ItemListagemPlano) => !!item.os_id && item.os_id === osElegivelId
+  const raioBase = fila.status?.base?.raioMetros ?? 0
+  const textoDistancia =
+    fila.distancia == null
+      ? 'Entra na fila de troca de óleo da base'
+      : fila.distancia <= raioBase
+        ? 'Você está na base'
+        : 'Você está a ' + formatarMetros(fila.distancia) + ' da base'
   const [listagem, setListagem] = useState<{ kmMoto: number; itens: ItemListagemPlano[] } | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -189,6 +205,33 @@ export function PlanosManutencao({ cliente, onVoltar }: Props) {
                         {situacao.texto}
                       </span>
                     </div>
+
+                    {/* A OS de troca de óleo liberada para a fila ganha a ação aqui
+                        mesmo, que é onde o cliente vê que a OS foi gerada. */}
+                    {ehOsDaFila(p) &&
+                      (naFila ? (
+                        <button
+                          onClick={onVerFila}
+                          className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent-light py-2.5 text-sm font-semibold text-accent"
+                        >
+                          <Clock3 size={14} />
+                          Ver minha vez na fila
+                        </button>
+                      ) : (
+                        <div className="mt-2.5">
+                          <button
+                            onClick={fila.entrar}
+                            disabled={fila.entrando}
+                            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent py-2.5 text-sm font-bold text-white disabled:opacity-60"
+                          >
+                            <MapPin size={14} />
+                            {fila.entrando ? 'Confirmando sua localização...' : 'Cheguei na base'}
+                          </button>
+                          <p className="mt-1 text-center text-[11px] text-zinc-400">
+                            {textoDistancia}
+                          </p>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )

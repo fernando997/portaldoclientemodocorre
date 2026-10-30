@@ -20,10 +20,12 @@ import {
   Headset,
 } from 'lucide-react'
 import { useAuthStore } from '@/store/auth'
+import { useFilaOleo } from '@/hooks/useFilaOleo'
 import type { Cliente } from '@/types/cliente'
 import { AlertaAtraso } from '@/components/portal/AlertaAtraso'
 import { AlertaBloqueio } from '@/components/portal/AlertaBloqueio'
 import { SolicitarDesbloqueio } from '@/components/portal/SolicitarDesbloqueio'
+import { AlertaFilaOleo } from '@/components/portal/AlertaFilaOleo'
 import { WhatsAppButton } from '@/components/portal/WhatsAppButton'
 import { NotificacoesSino } from '@/components/portal/NotificacoesSino'
 import { abrirPopup } from '@/lib/abrir-link'
@@ -44,6 +46,7 @@ import { Vistorias } from '@/components/portal/sections/Vistorias'
 import { OrdensServico } from '@/components/portal/sections/OrdensServico'
 import { Tickets } from '@/components/portal/sections/Tickets'
 import { PlanosManutencao } from '@/components/portal/sections/PlanosManutencao'
+import { FilaTrocaOleo } from '@/components/portal/sections/FilaTrocaOleo'
 import { MeusDados } from '@/components/portal/sections/MeusDados'
 import logo from '@/assets/logo.png'
 
@@ -58,6 +61,7 @@ type Secao =
   | 'ordens-servico'
   | 'tickets'
   | 'planos-manutencao'
+  | 'fila-troca-oleo'
   | 'meus-dados'
 
 const ABAS: { id: Secao; label: string; Icon: typeof Grid }[] = [
@@ -212,6 +216,19 @@ export function PortalPage() {
 
   const contratoId = cliente?.contratos[0]?.id
   const detalhesJaCarregados = !!cliente?.contratos[0]?.link_documento_moto
+
+  // Um polling só para a fila de óleo, consumido pelo banner do topo e pela
+  // tela da fila. A entrada fica fora da store persistida: é dado volátil.
+  const filaOleo = useFilaOleo(contratoId)
+  const entradaFila = filaOleo.status?.entrada ?? null
+  const filaEmAtendimento = entradaFila?.status === 'EM_ATENDIMENTO'
+  const faseFilaOleo: 'oferta' | 'na-fila' | 'chamado' | null = entradaFila
+    ? filaEmAtendimento || !!entradaFila.chamadoEmTs
+      ? 'chamado'
+      : 'na-fila'
+    : filaOleo.status?.osElegivel
+      ? 'oferta'
+      : null
 
   useEffect(() => {
     if (!contratoId || detalhesJaCarregados) return
@@ -594,7 +611,16 @@ export function PortalPage() {
       case 'tickets':
         return <Tickets cliente={cliente} />
       case 'planos-manutencao':
-        return <PlanosManutencao cliente={cliente} onVoltar={() => setSecaoAtiva('dashboard')} />
+        return (
+          <PlanosManutencao
+            cliente={cliente}
+            onVoltar={() => setSecaoAtiva('dashboard')}
+            fila={filaOleo}
+            onVerFila={() => setSecaoAtiva('fila-troca-oleo')}
+          />
+        )
+      case 'fila-troca-oleo':
+        return <FilaTrocaOleo fila={filaOleo} onVoltar={() => setSecaoAtiva('dashboard')} />
       case 'meus-dados':
         return <MeusDados cliente={cliente} />
     }
@@ -609,6 +635,19 @@ export function PortalPage() {
           loading={faseDesbloqueio === 'atualizar' ? atualizandoStatusDesbloqueio : solicitandoDesbloqueio}
           onSolicitar={solicitarDesbloqueio}
           onAtualizar={atualizarStatusDesbloqueio}
+        />
+      )}
+
+      {faseFilaOleo && (
+        <AlertaFilaOleo
+          fase={faseFilaOleo}
+          posicao={filaOleo.status?.posicao ?? 0}
+          emAtendimento={filaEmAtendimento}
+          loading={filaOleo.entrando}
+          distancia={filaOleo.distancia}
+          raioMetros={filaOleo.status?.base?.raioMetros ?? 0}
+          onEntrar={filaOleo.entrar}
+          onVer={() => setSecaoAtiva('fila-troca-oleo')}
         />
       )}
 

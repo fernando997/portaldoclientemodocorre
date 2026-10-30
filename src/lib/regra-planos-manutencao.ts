@@ -45,7 +45,7 @@ const num = (v: unknown) => (v == null || v === '' ? NaN : Number(v))
 
 const formatarKm = (n: number) => n.toLocaleString('pt-BR')
 
-function semAcento(texto: unknown) {
+export function semAcento(texto: unknown) {
   return String(texto ?? '')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
