@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Smartphone, X } from 'lucide-react'
 import { detectarPlataforma } from '@/lib/dispositivo'
-import { LOJA_ANDROID, LOJA_IOS, type LojaApp } from '@/config/app-nativo'
+import { AVISO_APP_ATIVO, LOJA_ANDROID, LOJA_IOS, type LojaApp } from '@/config/app-nativo'
 import { abrirLink } from '@/lib/abrir-link'
 import { LogoGooglePlay, LogoAppStore } from '@/components/portal/icones-lojas'
 
@@ -69,6 +69,9 @@ function BotaoLoja({ loja }: { loja: LojaApp }) {
 export function AvisoAppNativo({ suspenso = false }: Props) {
   const [modalAberto, setModalAberto] = useState(() => !jaViuNestaSessao())
   const lojas = lojasDoAparelho()
+
+  // Depois dos hooks, para nao mudar a quantidade deles entre renders
+  if (!AVISO_APP_ATIVO) return null
 
   function fecharModal() {
     marcarComoVisto()
