@@ -26,6 +26,7 @@ import { AlertaAtraso } from '@/components/portal/AlertaAtraso'
 import { AlertaBloqueio } from '@/components/portal/AlertaBloqueio'
 import { SolicitarDesbloqueio } from '@/components/portal/SolicitarDesbloqueio'
 import { AlertaFilaOleo } from '@/components/portal/AlertaFilaOleo'
+import { AvisoAppNativo } from '@/components/portal/AvisoAppNativo'
 import { WhatsAppButton } from '@/components/portal/WhatsAppButton'
 import { NotificacoesSino } from '@/components/portal/NotificacoesSino'
 import { abrirPopup } from '@/lib/abrir-link'
@@ -650,6 +651,8 @@ export function PortalPage() {
           onVer={() => setSecaoAtiva('fila-troca-oleo')}
         />
       )}
+
+      <AvisoAppNativo suspenso={temAtrasadas && !alertaFechado} />
 
       {temAtrasadas && !alertaFechado && (
         <AlertaAtraso
