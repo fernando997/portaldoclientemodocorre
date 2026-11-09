@@ -1,7 +1,15 @@
 import { useState } from 'react'
 import { Smartphone, X } from 'lucide-react'
 import { detectarPlataforma } from '@/lib/dispositivo'
-import { AVISO_APP_ATIVO, LOJA_ANDROID, LOJA_IOS, type LojaApp } from '@/config/app-nativo'
+import {
+  AVISO_APP_ATIVO,
+  LOJA_ANDROID,
+  LOJA_IOS,
+  PRAZO_TOTAL_DIAS,
+  PRAZO_ULTIMO_DIA,
+  type LojaApp,
+} from '@/config/app-nativo'
+import { diasRestantes, formatarDiaMes } from '@/lib/contagem-regressiva'
 import { abrirLink } from '@/lib/abrir-link'
 import { LogoGooglePlay, LogoAppStore } from '@/components/portal/icones-lojas'
 
@@ -41,6 +49,46 @@ function lojasDoAparelho(): LojaApp[] {
   return [LOJA_ANDROID, LOJA_IOS]
 }
 
+interface TextosPrazo {
+  faixa: string
+  contadorTitulo: string
+  contadorDetalhe: string
+  corpo: string
+}
+
+// Os três estados do prazo em um só lugar, para a contagem não virar um emaranhado
+// de condições espalhadas pelo JSX. O último dia e o prazo vencido falam de
+// "atendimento", e não de portal desligado, porque é o atendimento que muda de
+// lugar na data -- o portal continua no ar.
+function textosDoPrazo(dias: number, ultimoDia: string): TextosPrazo {
+  const data = formatarDiaMes(ultimoDia)
+
+  if (dias === 0) {
+    return {
+      faixa: 'O atendimento agora é pelo aplicativo Modo Corre.',
+      contadorTitulo: 'Prazo encerrado',
+      contadorDetalhe: `terminou em ${data}`,
+      corpo: 'O atendimento passou para o aplicativo Modo Corre. Baixe para continuar acompanhando seu contrato, suas parcelas e a fila de troca de óleo.',
+    }
+  }
+
+  if (dias === 1) {
+    return {
+      faixa: 'Hoje é o último dia para baixar o aplicativo Modo Corre.',
+      contadorTitulo: 'Último dia',
+      contadorDetalhe: `o prazo termina hoje, ${data}`,
+      corpo: 'O Portal do Cliente vai dar lugar ao aplicativo Modo Corre. Baixe hoje para continuar acompanhando seu contrato, suas parcelas e a fila de troca de óleo.',
+    }
+  }
+
+  return {
+    faixa: `Faltam ${dias} dias para o atendimento passar para o aplicativo.`,
+    contadorTitulo: 'dias restantes',
+    contadorDetalhe: `baixe o aplicativo até ${data}`,
+    corpo: `O Portal do Cliente vai dar lugar ao aplicativo Modo Corre. Baixe até ${data} para continuar acompanhando seu contrato, suas parcelas e a fila de troca de óleo.`,
+  }
+}
+
 function BotaoLoja({ loja }: { loja: LojaApp }) {
   const Logo = loja.id === 'android' ? LogoGooglePlay : LogoAppStore
 
@@ -73,6 +121,14 @@ export function AvisoAppNativo({ suspenso = false }: Props) {
   // Depois dos hooks, para nao mudar a quantidade deles entre renders
   if (!AVISO_APP_ATIVO) return null
 
+  // Recalculado a cada render, sem timer: o número só precisa estar certo quando
+  // a tela é desenhada, e o cliente não fica com o portal aberto virando o dia.
+  const dias = diasRestantes(PRAZO_ULTIMO_DIA, undefined, PRAZO_TOTAL_DIAS)
+  const textos = textosDoPrazo(dias, PRAZO_ULTIMO_DIA)
+  // Na reta final o aviso troca o verde pelo vermelho: é o mesmo sinal que o
+  // portal já usa para parcela em atraso, então o cliente lê como urgência.
+  const urgente = dias <= 2
+
   function fecharModal() {
     marcarComoVisto()
     setModalAberto(false)
@@ -83,13 +139,22 @@ export function AvisoAppNativo({ suspenso = false }: Props) {
       {/* Faixa fixa: não é dispensável, porque o aviso vale até a migração */}
       <button
         onClick={() => setModalAberto(true)}
-        className="flex w-full items-center gap-3 bg-accent px-4 py-3 text-left"
+        className={`flex w-full items-center gap-3 px-4 py-3 text-left ${urgente ? 'bg-danger' : 'bg-accent'}`}
       >
-        <Smartphone size={20} className="shrink-0 text-white" />
-        <span className="flex-1 text-[13px] font-bold leading-5 text-white">
-Baixe o aplicativo Modo Corre. O atendimento vai passar para o app.
-        </span>
-        <span className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-accent-dark">
+        {dias >= 2 ? (
+          <span className="flex h-9 w-9 shrink-0 flex-col items-center justify-center rounded-lg bg-white/20 leading-none text-white">
+            <span className="text-[15px] font-extrabold tabular-nums">{dias}</span>
+            <span className="text-[8px] font-bold uppercase">dias</span>
+          </span>
+        ) : (
+          <Smartphone size={20} className="shrink-0 text-white" />
+        )}
+
+        <span className="flex-1 text-[13px] font-bold leading-5 text-white">{textos.faixa}</span>
+
+        <span
+          className={`shrink-0 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold ${urgente ? 'text-danger' : 'text-accent-dark'}`}
+        >
           Baixar
         </span>
       </button>
@@ -114,9 +179,19 @@ Baixe o aplicativo Modo Corre. O atendimento vai passar para o app.
               Baixe o aplicativo Modo Corre
             </p>
 
-            <p className="mt-2 text-center text-[13px] leading-5 text-text-muted">
-O Portal do Cliente vai dar lugar ao aplicativo Modo Corre. Baixe agora para continuar acompanhando seu contrato, suas parcelas e a fila de troca de óleo.
-            </p>
+            <div
+              className={`mt-4 flex items-center justify-center gap-2.5 rounded-xl px-4 py-2.5 ${urgente ? 'bg-danger-bg text-danger' : 'bg-accent-light text-accent-dark'}`}
+            >
+              {dias >= 2 && (
+                <span className="text-[30px] font-extrabold leading-none tabular-nums">{dias}</span>
+              )}
+              <span className="flex flex-col items-start leading-tight">
+                <span className="text-[13px] font-bold">{textos.contadorTitulo}</span>
+                <span className="text-[11px] opacity-80">{textos.contadorDetalhe}</span>
+              </span>
+            </div>
+
+            <p className="mt-3 text-center text-[13px] leading-5 text-text-muted">{textos.corpo}</p>
 
             <div className="mt-5 flex flex-col gap-2.5">
               {lojas.map((loja) => (
