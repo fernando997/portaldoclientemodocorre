@@ -1,5 +1,18 @@
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from '@/config/api'
-import { obterDeviceId } from '@/services/localizacao'
+
+// Identificador anônimo do aparelho, só para contar quantos aparelhos distintos
+// acessam. Não tem nada de localização: mora aqui porque o registro de sessão é
+// o único lugar que o usa.
+const KEY_DEVICE_ID = 'device_id'
+
+export function obterDeviceId(): string {
+  let id = localStorage.getItem(KEY_DEVICE_ID)
+  if (!id) {
+    id = crypto.randomUUID()
+    localStorage.setItem(KEY_DEVICE_ID, id)
+  }
+  return id
+}
 
 async function supabaseInsert(tabela: string, payload: object): Promise<boolean> {
   try {

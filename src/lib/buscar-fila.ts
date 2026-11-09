@@ -129,32 +129,3 @@ export async function buscarStatusFila(contratoId: string): Promise<StatusFila> 
   }
 }
 
-// O endpoint revalida tudo no servidor (OS da moto do contrato, aberta e com
-// plano; dentro do raio da base; sem entrada ativa para a mesma OS). Quando
-// recusa, responde sucesso mas sem criar nada — por isso a ausência de
-// `entrada` é tratada aqui como falha, e não como sucesso silencioso.
-export async function entrarNaFila(args: {
-  contratoId: string
-  osId: string
-  latitude: number
-  longitude: number
-  distanciaMetros: number
-}): Promise<{ entrada: EntradaFila; posicao: number }> {
-  const r = await chamar(
-    'portal-cliente_fila-entrar',
-    {
-      contrato: args.contratoId,
-      os: args.osId,
-      latitude: args.latitude,
-      longitude: args.longitude,
-      distancia_metros: args.distanciaMetros,
-      apikey: BUBBLE_API_KEY,
-    },
-    'entrar na fila'
-  )
-  const entrada = mapearEntrada(r.entrada)
-  if (!entrada) {
-    throw new Error('Não foi possível entrar na fila. Confira se você está na base e tente de novo.')
-  }
-  return { entrada, posicao: num(r.posicao) }
-}

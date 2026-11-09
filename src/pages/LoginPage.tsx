@@ -6,7 +6,6 @@ import { useAuthStore } from '@/store/auth'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
 import { mapearCliente } from '@/lib/mapear-cliente'
 import type { BubbleResposta } from '@/data/bubble-estrutura'
-import { capturarLocalizacaoAtual } from '@/services/localizacao'
 import { registrarSessaoLogin } from '@/services/sessao'
 import { showToast } from '@/components/Toast'
 import logo from '@/assets/logo.png'
@@ -203,7 +202,6 @@ export function LoginPage() {
         numeroContrato: contrato?.numero,
         contratoId,
       })
-      capturarLocalizacaoAtual(contratoId)
 
       if (manterLogado) {
         localStorage.setItem(MANTER_LOGADO_KEY, '1')

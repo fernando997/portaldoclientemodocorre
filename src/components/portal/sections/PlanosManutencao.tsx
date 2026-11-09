@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { ArrowLeft, MapPin, Clock3 } from 'lucide-react'
+import { ArrowLeft, Smartphone, Clock3 } from 'lucide-react'
 import type { Cliente, ItemListagemPlano } from '@/types/cliente'
 import { Paginacao } from '@/components/portal/Paginacao'
-import { formatarMetros, type FilaOleo } from '@/hooks/useFilaOleo'
+import type { FilaOleo } from '@/hooks/useFilaOleo'
 import { buscarListagemPlanos } from '@/lib/buscar-planos-manutencao'
 import {
   filtrarListagem,
@@ -47,13 +47,6 @@ export function PlanosManutencao({ cliente, onVoltar, fila, onVerFila }: Props) 
   const naFila = !!fila.status?.entrada
   const osElegivelId = fila.status?.osElegivel?.id ?? null
   const ehOsDaFila = (item: ItemListagemPlano) => !!item.os_id && item.os_id === osElegivelId
-  const raioBase = fila.status?.base?.raioMetros ?? 0
-  const textoDistancia =
-    fila.distancia == null
-      ? 'Entra na fila de troca de óleo da base'
-      : fila.distancia <= raioBase
-        ? 'Você está na base'
-        : 'Você está a ' + formatarMetros(fila.distancia) + ' da base'
   const [listagem, setListagem] = useState<{ kmMoto: number; itens: ItemListagemPlano[] } | null>(null)
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -218,17 +211,11 @@ export function PlanosManutencao({ cliente, onVoltar, fila, onVerFila }: Props) 
                           Ver minha vez na fila
                         </button>
                       ) : (
-                        <div className="mt-2.5">
-                          <button
-                            onClick={fila.entrar}
-                            disabled={fila.entrando}
-                            className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-accent py-2.5 text-sm font-bold text-white disabled:opacity-60"
-                          >
-                            <MapPin size={14} />
-                            {fila.entrando ? 'Confirmando sua localização...' : 'Cheguei na base'}
-                          </button>
-                          <p className="mt-1 text-center text-[11px] text-zinc-400">
-                            {textoDistancia}
+                        <div className="mt-2.5 flex items-start gap-2 rounded-xl bg-surface p-2.5">
+                          <Smartphone size={14} className="mt-0.5 shrink-0 text-text-muted" />
+                          <p className="text-[11px] leading-4 text-text-muted">
+                            Chegando na base, pegue a sua vez pelo aplicativo Modo Corre ou no
+                            totem do atendimento.
                           </p>
                         </div>
                       ))}

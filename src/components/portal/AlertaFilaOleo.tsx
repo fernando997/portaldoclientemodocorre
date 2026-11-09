@@ -1,5 +1,4 @@
 import { Droplet, BellRing, Wrench } from 'lucide-react'
-import { formatarMetros } from '@/hooks/useFilaOleo'
 
 interface Props {
   // 'oferta': tem OS de óleo aberta e ainda não está na fila
@@ -8,30 +7,13 @@ interface Props {
   fase: 'oferta' | 'na-fila' | 'chamado'
   posicao: number
   emAtendimento: boolean
-  loading: boolean
-  distancia: number | null
-  raioMetros: number
-  onEntrar: () => void
   onVer: () => void
 }
 
-export function AlertaFilaOleo({
-  fase,
-  posicao,
-  emAtendimento,
-  loading,
-  distancia,
-  raioMetros,
-  onEntrar,
-  onVer,
-}: Props) {
-  // Com a distância já medida, o cliente sabe antes de tocar se vale a pena
-  const textoOferta =
-    distancia == null
-      ? 'Sua troca de óleo está liberada. Chegando na base, entre na fila de atendimento.'
-      : distancia <= raioMetros
-        ? 'Você está na base. Entre na fila da troca de óleo.'
-        : 'Sua troca de óleo está liberada. Você está a ' + formatarMetros(distancia) + ' da base.'
+export function AlertaFilaOleo({ fase, posicao, emAtendimento, onVer }: Props) {
+  // A entrada na fila saiu do portal: quem pede a vez agora é o aplicativo,
+  // que tem a localização para provar que o cliente está mesmo na base.
+  const textoOferta = 'Sua troca de óleo está liberada. Entre na fila pelo aplicativo Modo Corre.'
 
   if (fase === 'chamado') {
     return (
@@ -79,11 +61,10 @@ export function AlertaFilaOleo({
       <Droplet size={20} className="shrink-0 text-white" />
       <span className="flex-1 text-[13px] font-bold leading-5 text-white">{textoOferta}</span>
       <button
-        onClick={onEntrar}
-        disabled={loading}
-        className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-amber-700 disabled:opacity-60"
+        onClick={onVer}
+        className="shrink-0 rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-amber-700"
       >
-        {loading ? '...' : 'Entrar na fila'}
+        Ver
       </button>
     </div>
   )

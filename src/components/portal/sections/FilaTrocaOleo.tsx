@@ -1,4 +1,4 @@
-import { ArrowLeft, Droplet, MapPin, BellRing, Wrench } from 'lucide-react'
+import { ArrowLeft, Droplet, Smartphone, BellRing, Wrench } from 'lucide-react'
 import { POSICAO_ALERTA, type FilaOleo } from '@/hooks/useFilaOleo'
 
 interface Props {
@@ -16,7 +16,7 @@ function formatarHora(ts: number) {
 }
 
 export function FilaTrocaOleo({ fila, onVoltar }: Props) {
-  const { status, carregando, erro, entrando, entrar } = fila
+  const { status, carregando, erro } = fila
   const entrada = status?.entrada ?? null
   const posicao = status?.posicao ?? 0
   const total = status?.total ?? 0
@@ -150,21 +150,13 @@ export function FilaTrocaOleo({ fila, onVoltar }: Props) {
           </div>
 
           <div className="flex items-start gap-2.5 rounded-xl bg-surface p-3">
-            <MapPin size={16} className="mt-0.5 shrink-0 text-text-muted" />
+            <Smartphone size={16} className="mt-0.5 shrink-0 text-text-muted" />
             <p className="text-[13px] leading-5 text-text-muted">
-              Para entrar na fila você precisa estar na base
-              {status.base?.nome ? ' ' + status.base.nome : ' do seu contrato'}. Vamos confirmar sua
-              localização quando você tocar no botão.
+              Para pegar a sua vez, use o aplicativo Modo Corre
+              {status.base?.nome ? ' na base ' + status.base.nome : ' na base do seu contrato'}. Na
+              base, o totem do atendimento também continua disponível.
             </p>
           </div>
-
-          <button
-            onClick={entrar}
-            disabled={entrando}
-            className="flex items-center justify-center gap-1.5 rounded-xl bg-accent py-3 text-sm font-bold text-white disabled:opacity-60"
-          >
-            {entrando ? 'Confirmando sua localização...' : 'Entrar na fila de troca de óleo'}
-          </button>
         </div>
       )}
 

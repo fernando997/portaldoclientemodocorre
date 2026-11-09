@@ -31,7 +31,6 @@ import { WhatsAppButton } from '@/components/portal/WhatsAppButton'
 import { NotificacoesSino } from '@/components/portal/NotificacoesSino'
 import { abrirPopup } from '@/lib/abrir-link'
 import { nomeExibicao, formatarDocumento, rotuloDocumento } from '@/lib/nome-cliente'
-import { obterPosicaoAtual, verificarPermissaoLocalizacao, capturarLocalizacaoAtual } from '@/services/localizacao'
 import { showToast } from '@/components/Toast'
 import { resolverStatusParcela } from '@/utils/parcela'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
@@ -470,40 +469,8 @@ export function PortalPage() {
         return
       }
 
-      // Localização é obrigatória para solicitar o desbloqueio — sem
-      // exceção. Se o navegador já sabe que está bloqueada, nem tenta —
-      // avisa direto como reativar, porque o popup nativo não reabre
-      // sozinho depois de um bloqueio explícito.
-      const permissaoLocalizacao = await verificarPermissaoLocalizacao()
-      if (permissaoLocalizacao === 'denied') {
-        showToast(
-          'error',
-          'Você bloqueou o acesso à localização deste site. Toque no ícone de cadeado/localização ao lado do endereço no navegador, permita manualmente e tente de novo.'
-        )
-        return
-      }
-      if (permissaoLocalizacao !== 'granted') {
-        showToast('info', 'Precisamos da sua localização — clique em "Permitir" na janela que vai abrir.')
-      }
-      let posicao: GeolocationPosition
-      try {
-        posicao = await obterPosicaoAtual()
-      } catch (err) {
-        console.warn('[SOLICITAR DESBLOQUEIO] localização negada ou indisponível', err)
-        showToast(
-          'error',
-          'Para solicitar o desbloqueio você deve permitir sua localização. Se já negou antes, ative a permissão de localização deste site nas configurações do navegador e tente novamente.'
-        )
-        return
-      }
-
       const url = `${BUBBLE_BASE_URL}/solicitar-desbloqueio`
-      const body = {
-        contrato: contrato.id,
-        apikey: BUBBLE_API_KEY,
-        latitude: posicao.coords.latitude,
-        longitude: posicao.coords.longitude,
-      }
+      const body = { contrato: contrato.id, apikey: BUBBLE_API_KEY }
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -544,10 +511,6 @@ export function PortalPage() {
     atualizandoStatusDesbloqueioRef.current = true
     setAtualizandoStatusDesbloqueio(true)
     try {
-      // Registra a localização de novo, só pra log — não trava a conferência
-      // de status se o usuário não permitir dessa vez.
-      capturarLocalizacaoAtual(contrato.id)
-
       const { status, criadoEm } = await buscarStatusDesbloqueio(contrato.id)
       const clienteAtual = useAuthStore.getState().cliente
       if (clienteAtual) {
@@ -644,10 +607,6 @@ export function PortalPage() {
           fase={faseFilaOleo}
           posicao={filaOleo.status?.posicao ?? 0}
           emAtendimento={filaEmAtendimento}
-          loading={filaOleo.entrando}
-          distancia={filaOleo.distancia}
-          raioMetros={filaOleo.status?.base?.raioMetros ?? 0}
-          onEntrar={filaOleo.entrar}
           onVer={() => setSecaoAtiva('fila-troca-oleo')}
         />
       )}
