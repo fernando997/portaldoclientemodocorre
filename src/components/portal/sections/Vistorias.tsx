@@ -4,6 +4,7 @@ import { useAuthStore } from '@/store/auth'
 import { Paginacao } from '@/components/portal/Paginacao'
 import { BUBBLE_BASE_URL, BUBBLE_API_KEY } from '@/config/api'
 import { timestampParaDataLocal } from '@/lib/data'
+import { urlArquivo } from '@/lib/url-arquivo'
 
 function formatarData(iso: string) {
   return iso.split('-').reverse().join('/')
@@ -59,7 +60,7 @@ export function Vistorias({ cliente }: Props) {
           responsavel: v.vistoriador ?? '',
           status: 'concluida' as const,
           observacoes: null,
-          link_pdf: v.vistoria_pdf ? `https:${v.vistoria_pdf}` : null,
+          link_pdf: urlArquivo(v.vistoria_pdf),
         }))
 
         const fastVistorias = (data.response.fast_vistoria ?? []).map((v: any) => ({

@@ -30,6 +30,7 @@ import { AvisoAppNativo } from '@/components/portal/AvisoAppNativo'
 import { WhatsAppButton } from '@/components/portal/WhatsAppButton'
 import { NotificacoesSino } from '@/components/portal/NotificacoesSino'
 import { abrirPopup } from '@/lib/abrir-link'
+import { urlArquivo } from '@/lib/url-arquivo'
 import { nomeExibicao, formatarDocumento, rotuloDocumento } from '@/lib/nome-cliente'
 import { showToast } from '@/components/Toast'
 import { resolverStatusParcela } from '@/utils/parcela'
@@ -262,7 +263,7 @@ export function PortalPage() {
             c.id === contratoId
               ? {
                   ...c,
-                  link_documento_moto: documento ? `https:${documento}` : c.link_documento_moto,
+                  link_documento_moto: urlArquivo(documento) ?? c.link_documento_moto,
                   veiculo: veiculoCompleto ?? c.veiculo,
                   fiador: fiadorCompleto?.nome ?? c.fiador,
                   cpf_fiador: fiadorCompleto?.cpf ?? c.cpf_fiador,

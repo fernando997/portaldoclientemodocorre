@@ -1,6 +1,7 @@
 import type { Cliente, Contrato } from '@/types/cliente'
 import type { BubbleResposta, BubbleParcela, BubbleVeiculo, BubbleFiador, BubbleContrato } from '@/data/bubble-estrutura'
 import { logCaminhos } from '@/lib/debug-log'
+import { urlArquivo } from '@/lib/url-arquivo'
 import { timestampParaDataLocal, somarMesesData } from '@/lib/data'
 
 export function mapearParcela(p: BubbleParcela, index: number): Cliente['parcelas'][0] {
@@ -119,8 +120,8 @@ function mapearContratoDaLista(ct: BubbleContrato, ctx: ContextoContratoPrimario
     fiador: ehPrimario ? (ctx.fiadorPrimario?.nome ?? '') : '',
     cpf_fiador: ehPrimario ? (ctx.fiadorPrimario?.cpf ?? '') : '',
     telefone_fiador: ehPrimario ? (ctx.fiadorPrimario?.telefone ?? '') : '',
-    link_contrato: ct.url_contrato ? `https:${ct.url_contrato}` : null,
-    link_documento_moto: ehPrimario && ctx.documentoPrimario ? `https:${ctx.documentoPrimario}` : null,
+    link_contrato: urlArquivo(ct.url_contrato),
+    link_documento_moto: ehPrimario ? urlArquivo(ctx.documentoPrimario) : null,
     bloqueio: ct.bloqueio ?? '',
     solicitacao_desbloqueio_status: null,
     solicitacao_desbloqueio_criada_em: null,
@@ -172,7 +173,7 @@ export function mapearCliente(bubble: BubbleResposta['response']): Cliente {
 
   return {
     id: c._id,
-    foto_url: c.foto_face ? `https:${c.foto_face}` : null,
+    foto_url: urlArquivo(c.foto_face),
     nome_completo: c.nome_completo,
     cpf: c.cpf,
     rg: '',
