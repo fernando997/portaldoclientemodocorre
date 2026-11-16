@@ -1,17 +1,8 @@
 import { useState } from 'react'
 import { Smartphone, X } from 'lucide-react'
-import { detectarPlataforma } from '@/lib/dispositivo'
-import {
-  AVISO_APP_ATIVO,
-  LOJA_ANDROID,
-  LOJA_IOS,
-  PRAZO_TOTAL_DIAS,
-  PRAZO_ULTIMO_DIA,
-  type LojaApp,
-} from '@/config/app-nativo'
+import { AVISO_APP_ATIVO, PRAZO_TOTAL_DIAS, PRAZO_ULTIMO_DIA } from '@/config/app-nativo'
 import { diasRestantes, formatarDiaMes } from '@/lib/contagem-regressiva'
-import { abrirLink } from '@/lib/abrir-link'
-import { LogoGooglePlay, LogoAppStore } from '@/components/portal/icones-lojas'
+import { BotoesLojas } from '@/components/lojas/BotoesLojas'
 
 // Marca que o cliente já viu o modal nesta sessão. Em sessionStorage e não em
 // localStorage de propósito: o aviso precisa voltar a cada visita até a migração
@@ -39,14 +30,6 @@ interface Props {
   // Enquanto outro modal urgente estiver na tela (parcela em atraso), o aviso
   // do app espera a vez em vez de empilhar duas camadas sobre o cliente
   suspenso?: boolean
-}
-
-function lojasDoAparelho(): LojaApp[] {
-  const plataforma = detectarPlataforma()
-  if (plataforma === 'android') return [LOJA_ANDROID]
-  if (plataforma === 'ios') return [LOJA_IOS]
-  // No computador não há como saber qual aparelho ele usa: mostra as duas
-  return [LOJA_ANDROID, LOJA_IOS]
 }
 
 interface TextosPrazo {
@@ -89,34 +72,8 @@ function textosDoPrazo(dias: number, ultimoDia: string): TextosPrazo {
   }
 }
 
-function BotaoLoja({ loja }: { loja: LojaApp }) {
-  const Logo = loja.id === 'android' ? LogoGooglePlay : LogoAppStore
-
-  // Formato de selo de loja: logo à esquerda, chamada pequena em cima e o nome
-  // da loja embaixo. É o desenho que o cliente já conhece das duas lojas.
-  const conteudo = (
-    <>
-      <Logo className="shrink-0" />
-      <span className="flex flex-col items-start leading-tight">
-        <span className="text-[10px] font-medium">Baixar na</span>
-        <span className="text-[15px] font-bold">{loja.nome}</span>
-      </span>
-    </>
-  )
-
-  return (
-    <button
-      onClick={() => abrirLink(loja.url)}
-      className="flex items-center justify-center gap-2.5 rounded-xl bg-dark py-2.5 text-white"
-    >
-      {conteudo}
-    </button>
-  )
-}
-
 export function AvisoAppNativo({ suspenso = false }: Props) {
   const [modalAberto, setModalAberto] = useState(() => !jaViuNestaSessao())
-  const lojas = lojasDoAparelho()
 
   // Depois dos hooks, para nao mudar a quantidade deles entre renders
   if (!AVISO_APP_ATIVO) return null
@@ -193,11 +150,7 @@ export function AvisoAppNativo({ suspenso = false }: Props) {
 
             <p className="mt-3 text-center text-[13px] leading-5 text-text-muted">{textos.corpo}</p>
 
-            <div className="mt-5 flex flex-col gap-2.5">
-              {lojas.map((loja) => (
-                <BotaoLoja key={loja.id} loja={loja} />
-              ))}
-            </div>
+            <BotoesLojas className="mt-5" />
 
             <button
               onClick={fecharModal}

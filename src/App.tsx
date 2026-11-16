@@ -1,8 +1,10 @@
 import type { ReactNode } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/store/auth'
+import { PORTAL_WEB_ATIVO } from '@/config/app-nativo'
 import { LoginPage } from '@/pages/LoginPage'
 import { PortalPage } from '@/pages/PortalPage'
+import { BaixeOAppPage } from '@/pages/BaixeOAppPage'
 import { ToastHost } from '@/components/Toast'
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -12,6 +14,17 @@ function RequireAuth({ children }: { children: ReactNode }) {
 }
 
 function App() {
+  // Portal desligado: qualquer endereço cai na página de download, inclusive
+  // /portal e os atalhos que o cliente tenha salvo. Não há login nem rota de
+  // escape — o atendimento vive nos aplicativos nativos.
+  if (!PORTAL_WEB_ATIVO) {
+    return (
+      <Routes>
+        <Route path="*" element={<BaixeOAppPage />} />
+      </Routes>
+    )
+  }
+
   return (
     <>
       <ToastHost />
